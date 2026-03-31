@@ -104,7 +104,7 @@
    - 后端 API：http://localhost:3000/api
    - API 文档：http://localhost:3000/api/docs
 
-### 生产环境部署（等待后续实现）
+### 生产环境部署（待测试）
 
 提供多种部署方式：
 
