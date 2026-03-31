@@ -3,7 +3,7 @@
 <p align="center">
   <img src="packages/frontend/src/assets/hero.png" alt="Co-Arch Logo" width="400">
   <br>
-  <em>现代化的内容创作、分享与协作平台</em>
+  <em>内容创作、分享与协作平台</em>
 </p>
 
 <p align="center">
@@ -183,8 +183,8 @@ coarch/
 
 ## 👥 联系方式
 
-- **项目维护者**：[猫帕]
-- **问题反馈**：[GitHub Issues](https://github.com/C-Nekopedia/CoArch/issues)
+- **项目维护者**：猫帕
+- **问题反馈**：GitHub Issues(https://github.com/C-Nekopedia/CoArch/issues)
 - **安全报告**：请查看 [SECURITY.md](SECURITY.md)
 
 ---
