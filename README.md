@@ -1,4 +1,4 @@
-# Co-Arch - 内容创作与分享平台
+# Co-Arch - 开源全栈视频网站项目
 
 <p align="center">
   <img src="packages/frontend/src/assets/hero.png" alt="Co-Arch Logo" width="400">
