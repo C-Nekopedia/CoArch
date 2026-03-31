@@ -89,9 +89,4 @@ coarch/
 └── README.md
 ```
 
-## 社区
-- 加入讨论：GitHub Discussions
-- 行为准则：请阅读 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- 安全问题：请查看 [SECURITY.md](SECURITY.md)
-
 感谢您的贡献！🎉
