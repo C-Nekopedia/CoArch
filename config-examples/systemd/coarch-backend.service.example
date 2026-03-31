@@ -1,0 +1,133 @@
+[Unit]
+Description=CoArch Backend Service
+Documentation=https://github.com/C-Nekopedia/CoArch
+After=network.target postgresql.service redis.service
+Requires=network.target
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=coarch
+Group=coarch
+WorkingDirectory=/opt/coarch/packages/backend
+
+# 环境变量配置
+# 通过环境文件加载（推荐）
+EnvironmentFile=/etc/coarch/backend.env
+
+# 或者直接设置环境变量
+# Environment=NODE_ENV=production
+# Environment=DATABASE_URL=postgresql://coarch:password@localhost:5432/coarch?schema=public
+# Environment=REDIS_URL=redis://localhost:6379
+# Environment=JWT_SECRET=your_jwt_secret_here
+# Environment=JWT_EXPIRES_IN=7d
+# Environment=API_PORT=3000
+# Environment=LOG_LEVEL=info
+# Environment=NODE_OPTIONS=--max-old-space-size=512
+
+# 执行命令
+ExecStart=/usr/bin/node dist/main.js
+# 使用PM2管理（可选）
+# ExecStart=/usr/bin/pm2 start dist/main.js --name coarch-backend
+
+# 重启策略
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 标准输出/错误
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=coarch-backend
+
+# 进程管理
+PIDFile=/run/coarch/backend.pid
+RuntimeDirectory=coarch
+RuntimeDirectoryMode=0755
+
+# 资源限制
+# LimitNOFILE=65536
+# LimitNPROC=4096
+# LimitCORE=infinity
+# MemoryMax=512M
+# CPUQuota=100%
+
+# 安全配置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/coarch/packages/backend/uploads
+ReadWritePaths=/opt/coarch/packages/backend/logs
+ReadOnlyPaths=/opt/coarch/packages/backend
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# 工作目录设置
+WorkingDirectoryMode=0755
+ReadWriteDirectories=/opt/coarch/packages/backend/uploads
+ReadWriteDirectories=/opt/coarch/packages/backend/logs
+
+# 环境清理
+Environment=HOME=/opt/coarch
+Environment=PATH=/usr/bin
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+
+# 使用说明：
+# 1. 复制此文件到 /etc/systemd/system/coarch-backend.service
+# 2. 创建系统用户和组：
+#    sudo useradd -r -s /bin/false -d /opt/coarch coarch
+#    sudo groupadd coarch
+# 3. 创建环境文件 /etc/coarch/backend.env：
+#    NODE_ENV=production
+#    DATABASE_URL=postgresql://coarch:password@localhost:5432/coarch?schema=public
+#    REDIS_URL=redis://localhost:6379
+#    JWT_SECRET=your_secure_jwt_secret_here
+#    JWT_EXPIRES_IN=7d
+#    API_PORT=3000
+#    LOG_LEVEL=info
+#    NODE_OPTIONS=--max-old-space-size=512
+# 4. 设置目录权限：
+#    sudo chown -R coarch:coarch /opt/coarch
+#    sudo chmod 755 /opt/coarch
+# 5. 重新加载systemd配置：
+#    sudo systemctl daemon-reload
+# 6. 启用服务：
+#    sudo systemctl enable coarch-backend.service
+# 7. 启动服务：
+#    sudo systemctl start coarch-backend.service
+# 8. 检查状态：
+#    sudo systemctl status coarch-backend.service
+#
+# 管理命令：
+# - 查看日志：sudo journalctl -u coarch-backend -f
+# - 重启服务：sudo systemctl restart coarch-backend
+# - 停止服务：sudo systemctl stop coarch-backend
+# - 查看完整日志：sudo journalctl -u coarch-backend --no-pager
+#
+# 安全建议：
+# 1. 使用强密码和密钥
+# 2. 定期更新环境文件中的密钥
+# 3. 限制环境文件权限：sudo chmod 600 /etc/coarch/backend.env
+# 4. 监控服务日志和资源使用
+# 5. 配置防火墙限制API端口访问
+#
+# 故障排除：
+# 1. 服务启动失败：检查环境变量和文件权限
+# 2. 无法连接数据库：检查数据库服务和连接字符串
+# 3. 内存不足：调整NODE_OPTIONS中的内存限制
+# 4. 端口冲突：修改API_PORT环境变量

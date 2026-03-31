@@ -1,0 +1,165 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: coarch-postgres-${ENV:-development}
+    environment:
+      POSTGRES_DB: coarch
+      POSTGRES_USER: coarch
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-your_secure_password_here}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data_${ENV:-development}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coarch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # 资源限制（生产环境建议启用）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 512M
+    #     reservations:
+    #       memory: 256M
+    # 生产环境建议配置
+    command: >
+      postgres
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: coarch-redis-${ENV:-development}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data_${ENV:-development}:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # 资源限制（生产环境建议启用）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 256M
+    #     reservations:
+    #       memory: 128M
+    # Redis配置优化
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --requirepass ${REDIS_PASSWORD:-}
+
+  # 数据库管理工具（可选）
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: coarch-pgadmin-${ENV:-development}
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@coarch.local}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - postgres
+  #   volumes:
+  #     - pgadmin_data_${ENV:-development}:/var/lib/pgadmin
+  #   profiles:
+  #     - admin
+
+  # Redis管理工具（可选）
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: coarch-redis-commander-${ENV:-development}
+  #   environment:
+  #     - REDIS_HOSTS=local:redis:6379
+  #     - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
+  #     - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-admin}
+  #   ports:
+  #     - "${REDIS_COMMANDER_PORT:-8081}:8081"
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - redis
+  #   profiles:
+  #     - admin
+
+volumes:
+  postgres_data_${ENV:-development}:
+    name: coarch-postgres-data-${ENV:-development}
+    # 生产环境建议使用外部卷
+    # external: true
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /path/to/postgres/data
+  redis_data_${ENV:-development}:
+    name: coarch-redis-data-${ENV:-development}
+  # pgadmin_data_${ENV:-development}:
+  #   name: coarch-pgadmin-data-${ENV:-development}
+
+# 使用说明：
+# 1. 复制此文件到项目根目录并重命名为 docker-compose.yml
+# 2. 创建 .env 文件并设置环境变量：
+#    ENV=development  # 或 production
+#    DB_PASSWORD=your_secure_password
+#    DB_PORT=5432
+#    REDIS_PORT=6379
+#    REDIS_PASSWORD=your_redis_password
+# 3. 启动服务：docker-compose up -d
+# 4. 停止服务：docker-compose down
+# 5. 查看日志：docker-compose logs -f
+
+# 生产环境建议：
+# 1. 使用强密码替换默认密码
+# 2. 启用资源限制防止资源耗尽
+# 3. 配置数据卷备份策略
+# 4. 启用网络访问控制
+# 5. 配置监控和告警
+
+# 数据库连接信息：
+# PostgreSQL:
+#   Host: localhost
+#   Port: ${DB_PORT:-5432}
+#   Database: coarch
+#   Username: coarch
+#   Password: ${DB_PASSWORD}
+#   Connection URL: postgresql://coarch:${DB_PASSWORD}@localhost:${DB_PORT}/coarch
+
+# Redis:
+#   Host: localhost
+#   Port: ${REDIS_PORT:-6379}
+#   Password: ${REDIS_PASSWORD}
+#   Connection URL: redis://:${REDIS_PASSWORD}@localhost:${REDIS_PORT}
+
+# 数据库管理：
+# 1. 进入PostgreSQL容器：docker-compose exec postgres psql -U coarch -d coarch
+# 2. 备份数据库：docker-compose exec postgres pg_dump -U coarch coarch > backup.sql
+# 3. 恢复数据库：cat backup.sql | docker-compose exec -T postgres psql -U coarch -d coarch
+# 4. 查看Redis信息：docker-compose exec redis redis-cli INFO
+
+# 安全建议：
+# 1. 定期更新数据库密码
+# 2. 限制数据库访问IP（使用防火墙）
+# 3. 启用SSL连接（生产环境）
+# 4. 定期备份数据
+# 5. 监控数据库性能和资源使用

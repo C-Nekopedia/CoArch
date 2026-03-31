@@ -1,0 +1,152 @@
+[Unit]
+Description=CoArch Background Worker Service
+Documentation=https://github.com/C-Nekopedia/CoArch
+After=network.target coarch-backend.service
+Requires=network.target
+Wants=coarch-backend.service
+PartOf=coarch-backend.service
+
+[Service]
+Type=simple
+User=coarch
+Group=coarch
+WorkingDirectory=/opt/coarch/packages/backend
+
+# 环境变量配置（与后端服务共享）
+EnvironmentFile=/etc/coarch/backend.env
+
+# 工作器特定环境变量
+# Environment=WORKER_TYPE=queue
+# Environment=WORKER_CONCURRENCY=5
+# Environment=QUEUE_NAME=default
+
+# 执行命令（示例：运行工作器脚本）
+ExecStart=/usr/bin/node dist/worker.js
+# 使用PM2管理（可选）
+# ExecStart=/usr/bin/pm2 start dist/worker.js --name coarch-worker
+
+# 重启策略
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 标准输出/错误
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=coarch-worker
+
+# 进程管理
+PIDFile=/run/coarch/worker.pid
+RuntimeDirectory=coarch
+RuntimeDirectoryMode=0755
+
+# 资源限制（工作器通常需要较少资源）
+# LimitNOFILE=65536
+# LimitNPROC=2048
+# MemoryMax=256M
+# CPUQuota=50%
+
+# 安全配置（与后端服务相同）
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadOnlyPaths=/opt/coarch/packages/backend
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# 工作目录设置
+WorkingDirectoryMode=0755
+
+# 环境清理
+Environment=HOME=/opt/coarch
+Environment=PATH=/usr/bin
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+
+# 使用说明：
+# 1. 复制此文件到 /etc/systemd/system/coarch-worker.service
+# 2. 确保已配置后端服务（coarch-backend.service）
+# 3. 共享相同的环境文件 /etc/coarch/backend.env
+# 4. 创建工作器脚本 packages/backend/dist/worker.js
+# 5. 设置目录权限：
+#    sudo chown -R coarch:coarch /opt/coarch
+# 6. 重新加载systemd配置：
+#    sudo systemctl daemon-reload
+# 7. 启用服务：
+#    sudo systemctl enable coarch-worker.service
+# 8. 启动服务：
+#    sudo systemctl start coarch-worker.service
+#
+# 工作器类型示例：
+# 1. 队列处理：处理异步任务（邮件发送、图片处理等）
+# 2. 定时任务：执行定期任务（数据清理、统计计算等）
+# 3. 实时处理：处理WebSocket连接或实时数据
+#
+# 示例工作器脚本结构（dist/worker.js）：
+# ```
+# const { Worker } = require('./modules/worker/worker.module');
+#
+# async function bootstrap() {
+#   const worker = new Worker({
+#     type: process.env.WORKER_TYPE || 'queue',
+#     concurrency: parseInt(process.env.WORKER_CONCURRENCY) || 5,
+#     queueName: process.env.QUEUE_NAME || 'default'
+#   });
+#
+#   await worker.start();
+#   console.log('Worker started successfully');
+#
+#   // 优雅关闭
+#   process.on('SIGTERM', async () => {
+#     console.log('Received SIGTERM, shutting down gracefully...');
+#     await worker.stop();
+#     process.exit(0);
+#   });
+#
+#   process.on('SIGINT', async () => {
+#     console.log('Received SIGINT, shutting down gracefully...');
+#     await worker.stop();
+#     process.exit(0);
+#   });
+# }
+#
+# bootstrap().catch(error => {
+#   console.error('Worker failed to start:', error);
+#   process.exit(1);
+# });
+# ```
+#
+# 管理命令：
+# - 查看日志：sudo journalctl -u coarch-worker -f
+# - 重启服务：sudo systemctl restart coarch-worker
+# - 停止服务：sudo systemctl stop coarch-worker
+# - 与服务组一起管理：
+#   sudo systemctl start coarch-backend coarch-worker
+#   sudo systemctl stop coarch-backend coarch-worker
+#   sudo systemctl restart coarch-backend coarch-worker
+#
+# 监控建议：
+# 1. 监控工作器队列长度和处理延迟
+# 2. 设置工作器失败告警
+# 3. 定期检查工作器日志中的错误
+# 4. 监控工作器内存和CPU使用情况
+#
+# 扩展建议：
+# 1. 根据需要启动多个工作器实例
+# 2. 为不同类型的工作器创建不同的服务文件
+# 3. 使用进程管理器（如PM2）管理多个工作器进程
+# 4. 配置工作器自动扩缩容策略
