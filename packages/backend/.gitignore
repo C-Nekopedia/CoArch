@@ -1,0 +1,24 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.*
+
+/generated/prisma
+
+# 补充内容
+*.log
+logs/
+uploads/
+dist/
+coverage/
+.env.local
+.env.development.local
+.env.production.local
+.DS_Store
+Thumbs.db
+test.png
+*.sql
+*.backup
+backup-*/
+.vscode/
+.idea/

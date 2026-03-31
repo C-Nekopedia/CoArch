@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String         @id @default(uuid())
+  username       String         @unique @db.VarChar(50)
+  email          String         @unique
+  passwordHash   String         @map("password_hash")
+  avatar         String?        @db.VarChar(500)
+  bio            String?
+  followersCount Int            @default(0) @map("followers_count")
+  followingCount Int            @default(0) @map("following_count")
+  articleCount   Int            @default(0) @map("article_count")
+  videoCount     Int            @default(0) @map("video_count")
+  isCreator      Boolean        @default(false) @map("is_creator")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at")
+  lastLoginAt    DateTime?      @map("last_login_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  // 关系
+  articles       Article[]
+  comments       Comment[]
+  refreshTokens  RefreshToken[]
+  following      UserFollow[]   @relation("Follower")
+  followers      UserFollow[]   @relation("Following")
+  articleLikes   ArticleLike[]
+  commentLikes   CommentLike[]
+
+  @@map("users")
+  @@index([username])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Article {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  title          String    @db.VarChar(255)
+  content        String
+  excerpt        String?
+  cover          String?   @db.VarChar(500)
+  type           String    @db.VarChar(10) // 'article' or 'video'
+  duration       String?   @db.VarChar(20)
+  bilibiliUrl    String?   @map("bilibili_url") @db.VarChar(500)
+  bilibiliViewCount Int    @default(0) @map("bilibili_view_count")
+  bilibiliLikeCount Int    @default(0) @map("bilibili_like_count")
+  bilibiliDanmakuCount Int @default(0) @map("bilibili_danmaku_count")
+  bilibiliAuthor String?   @map("bilibili_author") @db.VarChar(100)
+  tags           String[]  // PostgreSQL数组类型
+  category       String?   @db.VarChar(100)
+  viewsCount     Int       @default(0) @map("views_count")
+  likesCount     Int       @default(0) @map("likes_count")
+  commentsCount  Int       @default(0) @map("comments_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  publishedAt    DateTime  @default(now()) @map("published_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // 关系
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  articleLikes   ArticleLike[]
+
+  @@map("articles")
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([category])
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Comment {
+  id         String       @id @default(uuid())
+  articleId  String       @map("article_id")
+  userId     String       @map("user_id")
+  parentId   String?      @map("parent_id")
+  depth      Int          @default(1) // 评论层级，1-3级
+  content    String
+  likesCount Int          @default(0) @map("likes_count")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @default(now()) @updatedAt @map("updated_at")
+  deletedAt  DateTime?    @map("deleted_at")
+
+  // 关系
+  article    Article      @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[]    @relation("CommentReplies")
+  commentLikes CommentLike[]
+
+  @@map("comments")
+  @@index([articleId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([depth])
+  @@index([articleId, createdAt])
+}
+
+model UserFollow {
+  followerId   String   @map("follower_id")
+  followingId  String   @map("following_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // 关系
+  follower     User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following    User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("user_follows")
+  @@index([followerId])
+  @@index([followingId])
+  @@index([createdAt])
+}
+
+model ArticleLike {
+  userId    String   @map("user_id")
+  articleId String   @map("article_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // 关系
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, articleId])
+  @@map("article_likes")
+  @@index([userId])
+  @@index([articleId])
+  @@index([createdAt])
+}
+
+model CommentLike {
+  userId    String   @map("user_id")
+  commentId String   @map("comment_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // 关系
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@map("comment_likes")
+  @@index([userId])
+  @@index([commentId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  // 关系
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}

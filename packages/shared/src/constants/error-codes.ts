@@ -1,0 +1,40 @@
+/**
+ * 错误代码常量定义
+ */
+
+/**
+ * 错误代码枚举
+ */
+export const ErrorCode = {
+  // 网络错误 (1000-1099)
+  NETWORK_ERROR: 1000,
+  REQUEST_TIMEOUT: 1001,
+  NETWORK_OFFLINE: 1002,
+
+  // 认证错误 (1100-1199)
+  UNAUTHORIZED: 1100,
+  FORBIDDEN: 1101,
+  TOKEN_EXPIRED: 1102,
+  INVALID_CREDENTIALS: 1103,
+
+  // 客户端错误 (1200-1299)
+  VALIDATION_ERROR: 1200,
+  INVALID_INPUT: 1201,
+  MISSING_PARAMETER: 1202,
+
+  // 服务器错误 (1300-1399)
+  INTERNAL_SERVER_ERROR: 1300,
+  SERVICE_UNAVAILABLE: 1301,
+  DATABASE_ERROR: 1302,
+
+  // 业务逻辑错误 (1400-1499)
+  RESOURCE_NOT_FOUND: 1400,
+  RESOURCE_EXISTS: 1401,
+  OPERATION_NOT_ALLOWED: 1402,
+  INSUFFICIENT_PERMISSIONS: 1403,
+} as const;
+
+/**
+ * 错误代码类型
+ */
+export type ErrorCodeType = typeof ErrorCode[keyof typeof ErrorCode];

@@ -1,0 +1,72 @@
+/* CSS变量定义 - 基于原样式颜色方案 */
+:root {
+  /* 主色调 */
+  --color-primary: #fb7299;
+  --color-primary-dark: #fc5c7d;
+  --color-primary-light: rgba(251, 114, 153, 0.1);
+
+  /* 背景色 */
+  --color-bg-dark: #1a1c24;
+  --color-bg-dark-secondary: #2a2e3a;
+  --color-bg-light: #ffffff;
+  --color-bg-gray: #f5f6f7;
+  --color-bg-gray-light: #f8f9fa;
+
+  /* 文字色 */
+  --color-text: #18191c;
+  --color-text-light: #5e636b;
+  --color-text-lighter: #9499a0;
+  --color-text-on-dark: rgba(255, 255, 255, 0.85);
+  --color-text-on-dark-light: rgba(255, 255, 255, 0.6);
+
+  /* 边框色 */
+  --color-border: #eef0f2;
+  --color-border-dark: rgba(255, 255, 255, 0.3);
+  --color-border-light: #e3e5e8;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.05);
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 40px;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* 过渡 */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.3s;
+
+  /* 容器宽度 */
+  --container-width: 70%;
+  --container-max-width: 1200px;
+}
+
+/* 响应式断点 */
+@media (max-width: 1100px) {
+  :root {
+    --container-width: 80%;
+  }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --container-width: 88%;
+  }
+}
+
+@media (max-width: 680px) {
+  :root {
+    --container-width: 92%;
+  }
+}
