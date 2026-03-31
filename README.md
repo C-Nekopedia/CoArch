@@ -3,7 +3,7 @@
 <p align="center">
   <img src="packages/frontend/src/assets/hero.png" alt="Co-Arch Logo" width="400">
   <br>
-  <em>内容创作、分享与协作平台</em>
+  <em>内容创作与分享平台</em>
 </p>
 
 <p align="center">
