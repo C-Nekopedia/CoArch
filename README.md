@@ -103,9 +103,9 @@
    - 后端 API：http://localhost:3000/api
    - API 文档：http://localhost:3000/api/docs
 
-### 生产环境部署
+### 生产环境部署（等待后续实现）
 
-我们提供多种部署方式：
+提供多种部署方式：
 
 1. **全容器化部署**（推荐）
    ```bash
@@ -156,7 +156,7 @@ coarch/
 └── docs/                 # 项目文档
 ```
 
-## 📚 详细文档（待完善）
+## 📚 详细文档（等待后续编写）
 
 - [开发指南](docs/development.md) - 开发环境设置和代码规范
 - [API 文档](docs/api.md) - 完整的 API 接口文档
@@ -184,7 +184,7 @@ coarch/
 ## 👥 联系方式
 
 - **项目维护者**：[猫帕]
-- **问题反馈**：[GitHub Issues](https://github.com/your-username/coarch/issues)
+- **问题反馈**：[GitHub Issues](https://github.com/C-Nekopedia/CoArch/issues)
 - **安全报告**：请查看 [SECURITY.md](SECURITY.md)
 
 ---
