@@ -30,7 +30,7 @@
 - **数据库**：PostgreSQL + Prisma ORM
 - **缓存**：Redis（等待后续实现）
 - **认证**：JWT + Passport
-- **文件存储**：本地文件系统（也许未来可扩展至云存储）
+- **文件存储**：本地文件系统
 - **API 文档**：Swagger/OpenAPI
 
 ### 前端 (Vue 3)
