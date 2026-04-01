@@ -13,6 +13,9 @@
   <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue-3.x-green.svg" alt="Vue.js"></a>
 </p>
 
+##  ❗  开源
+本项目遵循MIT协议，任何人可以随意查看、修改、分发、商用、私有化，只需要**保留我的名字**
+
 ## ✨ 功能特性
 
 - **视频分享**：当前仅支持嵌入B站视频，其他等待后续实现
