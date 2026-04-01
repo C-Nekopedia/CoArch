@@ -13,8 +13,10 @@
   <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue-3.x-green.svg" alt="Vue.js"></a>
 </p>
 
-##  ❗  开源
-本项目遵循MIT协议，任何人可以随意查看、修改、分发、商用、私有化，只需要**保留我的名字**
+## 📄 开源
+本项目遵循MIT协议，可以随意查看、修改、分发、商用、私有化，只需要**保留版权声明**
+查看 [LICENSE](LICENSE) 文件了解详情。
+
 
 ## ✨ 功能特性
 
@@ -180,10 +182,6 @@ coarch/
 3. 提交更改 (`git commit -m 'feat: add amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 开启 Pull Request
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 👥 联系方式
 
