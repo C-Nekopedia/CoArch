@@ -1,8 +1,4 @@
-# Co-Arch - 内容创作与分享平台
-
-<p align="center">
-  <em>开源全栈网站项目</em>
-</p>
+# Co-Arch
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
