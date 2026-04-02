@@ -67,7 +67,7 @@
 1. **克隆仓库**
    ```bash
    git clone https://github.com/C-Nekopedia/CoArch.git
-   cd coarch
+   cd CoArch
    ```
 
 2. **安装依赖**
