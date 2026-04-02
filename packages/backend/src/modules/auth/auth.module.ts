@@ -17,23 +17,15 @@ import { PrismaModule } from '../../shared/prisma/prisma.module';
       useFactory: (appConfig: ConfigType<typeof config>) => ({
         secret: appConfig.jwt.secret,
         signOptions: {
-          expiresIn: appConfig.jwt.accessTokenExpiresIn as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expiresIn: appConfig.jwt.accessTokenExpiresIn as any,
         },
       }),
     }),
     PrismaModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtAuthService,
-    JwtStrategy,
-  ],
-  exports: [
-    AuthService,
-    JwtAuthService,
-    JwtStrategy,
-    PassportModule,
-  ],
+  providers: [AuthService, JwtAuthService, JwtStrategy],
+  exports: [AuthService, JwtAuthService, JwtStrategy, PassportModule],
 })
 export class AuthModule {}

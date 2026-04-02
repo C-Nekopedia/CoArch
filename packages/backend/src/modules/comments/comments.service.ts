@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { Prisma } from '../../generated/prisma/browser';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
@@ -62,7 +63,7 @@ export class CommentsService {
       throw new NotFoundException('内容不存在');
     }
 
-    let parentComment: any = null;
+    let parentComment: Prisma.CommentGetPayload<{}> | null = null;
     let depth = 1;
 
     // 如果指定了父评论，检查父评论并计算深度
@@ -221,12 +222,10 @@ export class CommentsService {
    * 删除评论（软删除）
    */
   async deleteComment(commentId: string, userId: string): Promise<void> {
-    console.log(`deleteComment called: commentId=${commentId}, userId=${userId}`);
     // 检查评论是否存在且属于当前用户
     const comment = await this.prisma.comment.findUnique({
       where: { id: commentId, deletedAt: null },
     });
-    console.log('comment found:', comment);
 
     if (!comment) {
       throw new NotFoundException('评论不存在');
@@ -236,10 +235,8 @@ export class CommentsService {
       throw new ForbiddenException('无权删除此评论');
     }
 
-    console.log('Starting transaction for comment deletion');
     // 使用事务确保评论计数器的正确性
     await this.prisma.$transaction(async (tx) => {
-      console.log('Transaction started, soft deleting comment');
       // 软删除评论
       await tx.comment.update({
         where: { id: commentId },
@@ -247,19 +244,15 @@ export class CommentsService {
           deletedAt: new Date(),
         },
       });
-      console.log('Comment soft deleted');
 
       // 更新文章的评论数
-      console.log('Updating article comments count');
       await tx.article.update({
         where: { id: comment.articleId },
         data: {
           commentsCount: { decrement: 1 },
         },
       });
-      console.log('Article comments count updated');
     });
-    console.log('Transaction completed');
   }
 
   /**
@@ -333,7 +326,28 @@ export class CommentsService {
    * 构建评论树（包括回复）
    */
   private async buildCommentWithReplies(
-    comment: any,
+    comment: Prisma.CommentGetPayload<{
+      include: {
+        user: {
+          select: {
+            id: true;
+            username: true;
+            avatar: true;
+          };
+        };
+        replies?: {
+          include: {
+            user: {
+              select: {
+                id: true;
+                username: true;
+                avatar: true;
+              };
+            };
+          };
+        };
+      };
+    }>,
     currentUserId?: string,
   ): Promise<CommentResponse> {
     // 检查当前用户是否点赞

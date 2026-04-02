@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsUrl, IsArray, IsIn, MaxLength, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUrl,
+  IsArray,
+  IsIn,
+  MaxLength,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateArticleRequest } from '@coarch/shared';
 

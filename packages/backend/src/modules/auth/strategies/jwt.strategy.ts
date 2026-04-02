@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigType } from '@nestjs/config';
 import config from '../../../config/configuration';
 import { PrismaService } from '../../../shared/prisma/prisma.service';
+import { AccessTokenPayload } from '../jwt.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: AccessTokenPayload) {
     // 验证令牌类型
     if (payload.tokenType !== 'access') {
       throw new UnauthorizedException('令牌类型错误: 需要访问令牌');

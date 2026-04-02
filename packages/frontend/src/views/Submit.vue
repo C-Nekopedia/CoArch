@@ -374,61 +374,25 @@ const uploadAndInsertImage = (range: Range, selection: Selection) => {
       const img = document.createElement('img')
       img.className = 'embedded-image'
       // 设置初始样式确保立即适应
-      img.style.maxWidth = '100%'
+      img.style.maxWidth = '80%'
       img.style.height = 'auto'
       img.style.display = 'block'
       img.style.margin = '0 auto'
       img.style.boxSizing = 'border-box'
 
-      // 图片加载后精确调整尺寸
+      // 图片加载后应用CSS样式，清除可能的内联样式
       img.onload = function() {
-        const editor = document.getElementById('article-editor') as HTMLElement
-        if (!editor) return
-
-        // 计算编辑器内容区域的实际可用宽度（减去内边距）
-        const editorStyle = window.getComputedStyle(editor)
-        const editorPaddingLeft = parseFloat(editorStyle.paddingLeft) || 0
-        const editorPaddingRight = parseFloat(editorStyle.paddingRight) || 0
-        const availableWidth = editor.clientWidth - editorPaddingLeft - editorPaddingRight - 4 // 减去边框等
-
-        const naturalWidth = img.naturalWidth
-        const naturalHeight = img.naturalHeight
-
-        // 清除可能的内联宽度/高度，让max-width生效
+        // 清除可能的内联宽度/高度，让CSS样式生效
         img.style.width = ''
         img.style.height = ''
+        img.style.maxWidth = ''
+        img.style.maxHeight = ''
 
-        // 如果图片宽度大于可用宽度，按比例缩小
-        if (naturalWidth > availableWidth) {
-          const ratio = availableWidth / naturalWidth
-          const scaledHeight = naturalHeight * ratio
-
-          // 设置宽度为100%使其填充容器，高度自动按比例
-          img.style.width = '100%'
-          img.style.height = 'auto'
-          // 限制最大高度
-          if (scaledHeight > 400) {
-            img.style.maxHeight = '400px'
-          }
-        } else {
-          // 图片较小，保持原尺寸
-          img.style.width = naturalWidth + 'px'
-          img.style.height = naturalHeight + 'px'
-          // 但仍然限制最大高度
-          if (naturalHeight > 400) {
-            img.style.maxHeight = '400px'
-            img.style.height = 'auto'
-            // 重新计算宽度以保持比例
-            const heightRatio = 400 / naturalHeight
-            img.style.width = (naturalWidth * heightRatio) + 'px'
-          }
-        }
-
-        // 确保容器也限制宽度
+        // 确保容器应用CSS样式
         const container = img.parentElement
         if (container && container.classList.contains('image-container')) {
-          container.style.maxWidth = '100%'
-          container.style.overflow = 'hidden'
+          container.style.maxWidth = ''
+          container.style.width = ''
         }
       }
       img.src = dataUrl
@@ -559,61 +523,25 @@ const handleEditorPaste = (event: ClipboardEvent) => {
             const img = document.createElement('img')
             img.className = 'embedded-image'
             // 设置初始样式确保立即适应
-            img.style.maxWidth = '100%'
+            img.style.maxWidth = '80%'
             img.style.height = 'auto'
             img.style.display = 'block'
             img.style.margin = '0 auto'
             img.style.boxSizing = 'border-box'
 
-            // 图片加载后精确调整尺寸
+            // 图片加载后应用CSS样式，清除可能的内联样式
             img.onload = function() {
-              const editor = document.getElementById('article-editor') as HTMLElement
-              if (!editor) return
-
-              // 计算编辑器内容区域的实际可用宽度（减去内边距）
-              const editorStyle = window.getComputedStyle(editor)
-              const editorPaddingLeft = parseFloat(editorStyle.paddingLeft) || 0
-              const editorPaddingRight = parseFloat(editorStyle.paddingRight) || 0
-              const availableWidth = editor.clientWidth - editorPaddingLeft - editorPaddingRight - 4 // 减去边框等
-
-              const naturalWidth = img.naturalWidth
-              const naturalHeight = img.naturalHeight
-
-              // 清除可能的内联宽度/高度，让max-width生效
+              // 清除可能的内联宽度/高度，让CSS样式生效
               img.style.width = ''
               img.style.height = ''
+              img.style.maxWidth = ''
+              img.style.maxHeight = ''
 
-              // 如果图片宽度大于可用宽度，按比例缩小
-              if (naturalWidth > availableWidth) {
-                const ratio = availableWidth / naturalWidth
-                const scaledHeight = naturalHeight * ratio
-
-                // 设置宽度为100%使其填充容器，高度自动按比例
-                img.style.width = '100%'
-                img.style.height = 'auto'
-                // 限制最大高度
-                if (scaledHeight > 400) {
-                  img.style.maxHeight = '400px'
-                }
-              } else {
-                // 图片较小，保持原尺寸
-                img.style.width = naturalWidth + 'px'
-                img.style.height = naturalHeight + 'px'
-                // 但仍然限制最大高度
-                if (naturalHeight > 400) {
-                  img.style.maxHeight = '400px'
-                  img.style.height = 'auto'
-                  // 重新计算宽度以保持比例
-                  const heightRatio = 400 / naturalHeight
-                  img.style.width = (naturalWidth * heightRatio) + 'px'
-                }
-              }
-
-              // 确保容器也限制宽度
+              // 确保容器应用CSS样式
               const container = img.parentElement
               if (container && container.classList.contains('image-container')) {
-                container.style.maxWidth = '100%'
-                container.style.overflow = 'hidden'
+                container.style.maxWidth = ''
+                container.style.width = ''
               }
             }
 
@@ -1210,25 +1138,33 @@ onMounted(() => {
 /* 嵌入图片样式 */
 .image-container {
   display: block;
-  margin: 24px 0;
+  margin: 1em auto;
   text-align: center;
-  width: 100%;
-  max-width: 100%;
   overflow: hidden;
   box-sizing: border-box;
   position: relative;
 }
 
-.embedded-image {
-  display: block;
-  max-width: 100% !important;
+.embedded-image,
+#article-editor :deep(img) {
+  display: block !important;
+  max-width: 80% !important;
+  min-width: 30% !important;
   width: auto !important;
   height: auto !important;
-  max-height: 400px !important;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 0 auto;
-  object-fit: contain;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  margin: 0 auto !important;
+  object-fit: contain !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .embedded-image,
+  #article-editor :deep(img) {
+    max-width: 100% !important;
+    min-width: 50% !important;
+  }
 }
 
 
@@ -1259,5 +1195,26 @@ onMounted(() => {
 
 .submit-container.edit-mode .submit-content {
   width: 100%;
+}
+
+/* 确保编辑器中的图片样式生效 */
+#article-editor .image-container img,
+#article-editor img {
+  max-width: 80% !important;
+  min-width: 30% !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+  margin: 1em auto !important;
+  border-radius: 8px !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 768px) {
+  #article-editor .image-container img,
+  #article-editor img {
+    max-width: 100% !important;
+    min-width: 50% !important;
+  }
 }
 </style>

@@ -19,21 +19,21 @@ export const API_ENDPOINTS = {
   // 内容模块
   ARTICLES: {
     LIST: '/articles',
-    DETAIL: (id: number) => `/articles/${id}`,
+    DETAIL: (id: string | number) => `/articles/${id}`,
     CREATE: '/articles',
-    UPDATE: (id: number) => `/articles/${id}`,
-    DELETE: (id: number) => `/articles/${id}`,
-    LIKE: (id: number) => `/articles/${id}/like`,
-    VIEW: (id: number) => `/articles/${id}/view`,
+    UPDATE: (id: string | number) => `/articles/${id}`,
+    DELETE: (id: string | number) => `/articles/${id}`,
+    LIKE: (id: string | number) => `/articles/${id}/like`,
+    VIEW: (id: string | number) => `/articles/${id}/view`,
   },
 
   // 评论模块
   COMMENTS: {
-    LIST: (articleId: number) => `/articles/${articleId}/comments`,
-    CREATE: (articleId: number) => `/articles/${articleId}/comments`,
-    UPDATE: (id: number) => `/comments/${id}`,
-    DELETE: (id: number) => `/comments/${id}`,
-    LIKE: (id: number) => `/comments/${id}/like`,
+    LIST: (articleId: string | number) => `/comments/articles/${articleId}/comments`,
+    CREATE: (articleId: string | number) => `/comments/articles/${articleId}/comments`,
+    UPDATE: (id: string | number) => `/comments/${id}`,
+    DELETE: (id: string | number) => `/comments/${id}`,
+    LIKE: (id: string | number) => `/comments/${id}/like`,
   },
 
   // 用户模块

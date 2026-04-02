@@ -3,9 +3,12 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
-  BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { Prisma } from '../../generated/prisma/browser';
+import { RedisService } from '../../shared/redis/redis.service';
+import { LoggerService } from '../../shared/logger/logger.service';
 import { BilibiliService } from './bilibili.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -58,157 +61,220 @@ export interface PaginatedArticles {
 export class ArticlesService {
   constructor(
     private readonly prisma: PrismaService,
+    @Optional() private readonly redis: RedisService,
+    @Optional() private readonly logger: LoggerService,
     private readonly bilibiliService: BilibiliService,
-  ) {}
+  ) {
+    if (this.logger) {
+      this.logger.setContext('ArticlesService');
+    }
+  }
+
+  private isRedisAvailable(): boolean {
+    return !!this.redis;
+  }
 
   /**
    * 创建文章或视频
    */
-  async createArticle(userId: string, createArticleDto: CreateArticleDto): Promise<ArticleResponse> {
-    console.log('[createArticle] 开始创建文章，用户ID:', userId)
-    console.log('[createArticle] 文章数据:', JSON.stringify(createArticleDto, null, 2))
-
+  async createArticle(
+    userId: string,
+    createArticleDto: CreateArticleDto,
+  ): Promise<ArticleResponse> {
     // 提取摘要（如果未提供）
     try {
+      this.logger.debug(
+        `开始创建文章，用户ID: ${userId}, 类型: ${createArticleDto.type}`,
+      );
       let excerpt = createArticleDto.excerpt;
-    if (!excerpt && createArticleDto.content) {
-      excerpt = createArticleDto.content.substring(0, 200).trim() + '...';
-    }
-
-    // 处理标签（确保是字符串数组）
-    const tags = createArticleDto.tags || [];
-
-    // 如果是视频类型且有B站链接，尝试获取视频信息
-    let duration = createArticleDto.duration;
-    let cover = createArticleDto.cover;
-    let bilibiliViewCount = 0;
-    let bilibiliLikeCount = 0;
-    let bilibiliDanmakuCount = 0;
-    let bilibiliAuthor: string | null = null;
-
-    if (createArticleDto.type === 'video' && createArticleDto.bilibiliUrl) {
-      try {
-        const videoInfo = await this.bilibiliService.getVideoInfo(createArticleDto.bilibiliUrl);
-
-        // 如果用户没有提供时长，使用从B站获取的时长
-        if (!duration && videoInfo.durationFormatted) {
-          duration = videoInfo.durationFormatted;
-        }
-
-        // 如果用户没有提供封面，使用从B站获取的封面
-        if (!cover && videoInfo.cover) {
-          cover = videoInfo.cover;
-        }
-
-        // 保存B站视频元数据
-        bilibiliViewCount = videoInfo.viewCount;
-        bilibiliLikeCount = videoInfo.likeCount;
-        bilibiliDanmakuCount = videoInfo.danmakuCount;
-        bilibiliAuthor = videoInfo.author;
-      } catch (error) {
-        // 记录错误但不阻止创建，使用用户提供的其他信息
-        console.warn(`获取B站视频信息失败: ${error.message}`);
+      if (!excerpt && createArticleDto.content) {
+        excerpt = createArticleDto.content.substring(0, 200).trim() + '...';
       }
-    }
 
-    // 创建文章
-    console.log('[createArticle] 准备创建数据库记录，类型:', createArticleDto.type)
-    console.log('[createArticle] 标签:', tags)
-    console.log('[createArticle] 封面:', cover)
-    console.log('[createArticle] 时长:', duration)
+      // 处理标签（确保是字符串数组）
+      const tags = createArticleDto.tags || [];
 
-    const article = await this.prisma.article.create({
-      data: {
-        title: createArticleDto.title,
-        content: createArticleDto.content,
-        excerpt,
-        cover,
-        type: createArticleDto.type,
-        duration,
-        bilibiliUrl: createArticleDto.bilibiliUrl,
-        bilibiliViewCount,
-        bilibiliLikeCount,
-        bilibiliDanmakuCount,
-        bilibiliAuthor,
-        tags,
-        category: createArticleDto.category,
-        userId,
-        publishedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-          },
+      // 如果是视频类型且有B站链接，尝试获取视频信息
+      let duration = createArticleDto.duration;
+      let cover = createArticleDto.cover;
+      let bilibiliViewCount = 0;
+      let bilibiliLikeCount = 0;
+      let bilibiliDanmakuCount = 0;
+      let bilibiliAuthor: string | null = null;
+
+      if (createArticleDto.type === 'video' && createArticleDto.bilibiliUrl) {
+        try {
+          const videoInfo = await this.bilibiliService.getVideoInfo(
+            createArticleDto.bilibiliUrl,
+          );
+
+          // 如果用户没有提供时长，使用从B站获取的时长
+          if (!duration && videoInfo.durationFormatted) {
+            duration = videoInfo.durationFormatted;
+          }
+
+          // 如果用户没有提供封面，使用从B站获取的封面
+          if (!cover && videoInfo.cover) {
+            cover = videoInfo.cover;
+          }
+
+          // 保存B站视频元数据
+          bilibiliViewCount = videoInfo.viewCount;
+          bilibiliLikeCount = videoInfo.likeCount;
+          bilibiliDanmakuCount = videoInfo.danmakuCount;
+          bilibiliAuthor = videoInfo.author;
+        } catch (error) {
+          // 记录错误但不阻止创建，使用用户提供的其他信息
+          this.logger.warn(`获取B站视频信息失败: ${error.message}`);
+        }
+      }
+
+      // 创建文章
+      this.logger.debug(
+        `准备创建数据库记录，类型: ${createArticleDto.type}, 标签数: ${tags.length}`,
+      );
+
+      const article = await this.prisma.article.create({
+        data: {
+          title: createArticleDto.title,
+          content: createArticleDto.content,
+          excerpt,
+          cover,
+          type: createArticleDto.type,
+          duration,
+          bilibiliUrl: createArticleDto.bilibiliUrl,
+          bilibiliViewCount,
+          bilibiliLikeCount,
+          bilibiliDanmakuCount,
+          bilibiliAuthor,
+          tags,
+          category: createArticleDto.category,
+          userId,
+          publishedAt: new Date(),
         },
-      },
-    });
-
-    // 更新用户的文章/视频计数
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        [createArticleDto.type === 'article' ? 'articleCount' : 'videoCount']: {
-          increment: 1,
-        },
-      },
-    });
-
-    console.log('[createArticle] 数据库记录创建成功，文章ID:', article.id)
-    console.log('[createArticle] 用户计数更新完成')
-
-    return this.mapToArticleResponse(article);
-  } catch (error) {
-    console.error('[createArticle] 捕获到错误:', error);
-    console.error('[createArticle] 错误堆栈:', error.stack);
-    throw error;
-  }
-  }
-
-  /**
-   * 根据ID获取文章详情
-   */
-  async getArticleById(id: string, currentUserId?: string): Promise<ArticleResponse> {
-    const article = await this.prisma.article.findUnique({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
-    if (!article) {
-      throw new NotFoundException('内容不存在');
-    }
-
-    // 检查当前用户是否点赞
-    let isLiked = false;
-    if (currentUserId) {
-      const like = await this.prisma.articleLike.findUnique({
-        where: {
-          userId_articleId: {
-            userId: currentUserId,
-            articleId: id,
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+            },
           },
         },
       });
-      isLiked = !!like;
-    }
 
-    return {
-      ...this.mapToArticleResponse(article),
-      isLiked,
-    };
+      // 更新用户的文章/视频计数
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          [createArticleDto.type === 'article' ? 'articleCount' : 'videoCount']:
+            {
+              increment: 1,
+            },
+        },
+      });
+
+      this.logger.debug(
+        `数据库记录创建成功，文章ID: ${article.id}, 用户计数更新完成`,
+      );
+
+      return this.mapToArticleResponse(article);
+    } catch (error) {
+      this.logger.error(`创建文章失败: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * 根据ID获取文章详情（带缓存）
+   */
+  async getArticleById(
+    id: string,
+    currentUserId?: string,
+  ): Promise<ArticleResponse> {
+    const cacheKey = `article:${id}`;
+    const userLikeKey = currentUserId
+      ? `article:${id}:like:${currentUserId}`
+      : null;
+
+    try {
+      // 检查Redis是否可用
+      if (this.isRedisAvailable()) {
+        // 尝试从缓存获取文章数据
+        const cachedArticle = await this.redis.get<ArticleResponse>(cacheKey);
+        if (cachedArticle) {
+          this.logger.debug(`从缓存获取文章 ${id}`);
+
+          // 检查点赞状态（如果需要）
+          if (currentUserId) {
+            const cachedLike = await this.redis.get<boolean>(userLikeKey!);
+            if (cachedLike !== null) {
+              cachedArticle.isLiked = cachedLike;
+            } else {
+              // 缓存中没有点赞状态，从数据库获取
+              const isLiked = await this.checkLikeStatus(id, currentUserId);
+              cachedArticle.isLiked = isLiked;
+              // 缓存点赞状态（短期缓存，5分钟）
+              await this.redis.set(userLikeKey!, isLiked, 5 * 60 * 1000);
+            }
+          }
+
+          return cachedArticle;
+        }
+
+        this.logger.debug(`缓存未命中，从数据库获取文章 ${id}`);
+      }
+
+      // 从数据库获取文章
+      const article = await this.prisma.article.findUnique({
+        where: {
+          id,
+          deletedAt: null,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+
+      if (!article) {
+        throw new NotFoundException('内容不存在');
+      }
+
+      // 检查当前用户是否点赞
+      let isLiked = false;
+      if (currentUserId) {
+        isLiked = await this.checkLikeStatus(id, currentUserId);
+        // 缓存点赞状态（如果Redis可用）
+        if (this.isRedisAvailable()) {
+          await this.redis.set(userLikeKey!, isLiked, 5 * 60 * 1000);
+        }
+      }
+
+      // 转换为响应格式
+      const articleResponse = {
+        ...this.mapToArticleResponse(article),
+        isLiked,
+      };
+
+      // 缓存文章数据（默认60分钟，如果Redis可用）
+      if (this.isRedisAvailable()) {
+        await this.redis.set(cacheKey, articleResponse, 60 * 60 * 1000);
+        this.logger.debug(`文章 ${id} 已缓存`);
+      }
+
+      this.logger.debug(`文章 ${id} 已缓存`);
+
+      return articleResponse;
+    } catch (error) {
+      this.logger.error(`获取文章详情失败 ${id}`, error);
+      throw error;
+    }
   }
 
   /**
@@ -233,7 +299,10 @@ export class ArticlesService {
     }
 
     // 处理标签（如果提供）
-    const tags = updateArticleDto.tags !== undefined ? updateArticleDto.tags : article.tags;
+    const tags =
+      updateArticleDto.tags !== undefined
+        ? updateArticleDto.tags
+        : article.tags;
 
     // 更新文章
     const updatedArticle = await this.prisma.article.update({
@@ -257,6 +326,12 @@ export class ArticlesService {
         },
       },
     });
+
+    // 清除文章缓存（如果Redis可用）
+    if (this.isRedisAvailable()) {
+      await this.redis.del(`article:${id}`);
+      this.logger.debug(`文章 ${id} 缓存已清除（更新后）`);
+    }
 
     return this.mapToArticleResponse(updatedArticle);
   }
@@ -295,12 +370,21 @@ export class ArticlesService {
         },
       },
     });
+
+    // 清除文章缓存（如果Redis可用）
+    if (this.isRedisAvailable()) {
+      await this.redis.del(`article:${id}`);
+      this.logger.debug(`文章 ${id} 缓存已清除（删除后）`);
+    }
   }
 
   /**
    * 获取文章列表（支持分页、筛选、排序）
    */
-  async getArticles(query: GetArticlesQueryDto, currentUserId?: string): Promise<PaginatedArticles> {
+  async getArticles(
+    query: GetArticlesQueryDto,
+    currentUserId?: string,
+  ): Promise<PaginatedArticles> {
     const {
       page = 1,
       pageSize = 20,
@@ -313,10 +397,10 @@ export class ArticlesService {
       sortOrder = 'desc',
     } = query;
 
-    const skip = (page - 1) * pageSize;
+    const skip = (Number(page) - 1) * Number(pageSize);
 
     // 构建查询条件
-    const where: any = {
+    const where: Prisma.ArticleWhereInput = {
       deletedAt: null,
     };
 
@@ -368,8 +452,8 @@ export class ArticlesService {
     }
 
     // 排序
-    const orderBy: any = {};
-    orderBy[sortBy] = sortOrder;
+    const orderBy: Prisma.ArticleOrderByWithRelationInput = {};
+    (orderBy as Record<string, 'asc' | 'desc'>)[sortBy] = sortOrder;
 
     // 获取总数
     const total = await this.prisma.article.count({ where });
@@ -387,7 +471,7 @@ export class ArticlesService {
         },
       },
       skip,
-      take: pageSize,
+      take: Number(pageSize),
       orderBy,
     });
 
@@ -430,7 +514,10 @@ export class ArticlesService {
   /**
    * 点赞文章
    */
-  async likeArticle(articleId: string, userId: string): Promise<{ isLiked: boolean; likesCount: number }> {
+  async likeArticle(
+    articleId: string,
+    userId: string,
+  ): Promise<{ isLiked: boolean; likesCount: number }> {
     // 检查文章是否存在
     const article = await this.prisma.article.findUnique({
       where: { id: articleId, deletedAt: null },
@@ -479,6 +566,13 @@ export class ArticlesService {
       select: { likesCount: true },
     });
 
+    // 清除文章缓存和点赞状态缓存（如果Redis可用）
+    if (this.isRedisAvailable()) {
+      await this.redis.del(`article:${articleId}`);
+      await this.redis.del(`article:${articleId}:like:${userId}`);
+      this.logger.debug(`文章 ${articleId} 缓存已清除（点赞后）`);
+    }
+
     return {
       isLiked: true,
       likesCount: updatedArticle?.likesCount || 0,
@@ -488,7 +582,10 @@ export class ArticlesService {
   /**
    * 取消点赞文章
    */
-  async unlikeArticle(articleId: string, userId: string): Promise<{ isLiked: boolean; likesCount: number }> {
+  async unlikeArticle(
+    articleId: string,
+    userId: string,
+  ): Promise<{ isLiked: boolean; likesCount: number }> {
     // 检查文章是否存在
     const article = await this.prisma.article.findUnique({
       where: { id: articleId, deletedAt: null },
@@ -539,6 +636,13 @@ export class ArticlesService {
       select: { likesCount: true },
     });
 
+    // 清除文章缓存和点赞状态缓存（如果Redis可用）
+    if (this.isRedisAvailable()) {
+      await this.redis.del(`article:${articleId}`);
+      await this.redis.del(`article:${articleId}:like:${userId}`);
+      this.logger.debug(`文章 ${articleId} 缓存已清除（取消点赞后）`);
+    }
+
     return {
       isLiked: false,
       likesCount: updatedArticle?.likesCount || 0,
@@ -558,9 +662,20 @@ export class ArticlesService {
   }
 
   /**
-   * 检查用户是否点赞了文章
+   * 检查用户是否点赞了文章（带缓存）
    */
   async checkLikeStatus(articleId: string, userId: string): Promise<boolean> {
+    const cacheKey = `article:${articleId}:like:${userId}`;
+
+    // 如果Redis可用，尝试从缓存获取
+    if (this.isRedisAvailable()) {
+      const cachedLike = await this.redis.get<boolean>(cacheKey);
+      if (cachedLike !== null) {
+        return cachedLike;
+      }
+    }
+
+    // 从数据库获取
     const like = await this.prisma.articleLike.findUnique({
       where: {
         userId_articleId: {
@@ -570,18 +685,30 @@ export class ArticlesService {
       },
     });
 
-    return !!like;
+    const isLiked = !!like;
+
+    // 缓存结果（5分钟，如果Redis可用）
+    if (this.isRedisAvailable()) {
+      await this.redis.set(cacheKey, isLiked, 5 * 60 * 1000);
+    }
+
+    return isLiked;
   }
 
   /**
    * 将Prisma文章对象映射到响应格式
    */
-  private mapToArticleResponse(article: any): ArticleResponse {
+  private mapToArticleResponse(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    article: any,
+  ): ArticleResponse {
     // 提取B站视频BV号（如果有bilibiliUrl）
     let bvid: string | null = null;
     if (article.bilibiliUrl) {
       try {
-        const videoId = this.bilibiliService.extractVideoId(article.bilibiliUrl);
+        const videoId = this.bilibiliService.extractVideoId(
+          article.bilibiliUrl,
+        );
         bvid = videoId.bvid || null;
       } catch {
         // 如果URL无效或无法提取，保持bvid为null

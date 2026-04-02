@@ -7,7 +7,13 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiResponse } from '../interceptors/response.interceptor';
-import { ErrorCode } from '@coarch/shared';
+import { ErrorCode, type ErrorCodeType } from '@coarch/shared';
+
+interface ExceptionResponseObject {
+  message?: string | string[];
+  error?: string;
+  code?: number;
+}
 
 /**
  * HTTP异常过滤器
@@ -23,13 +29,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // 获取错误信息
     let errorMessage = '服务器内部错误';
-    let errorCode = status * 100; // 默认错误码为HTTP状态码 * 100
+    let errorCode: ErrorCodeType = ErrorCode.INTERNAL_SERVER_ERROR; // 默认错误码
     let detailMessage: string | undefined;
 
     if (typeof exceptionResponse === 'string') {
       errorMessage = exceptionResponse;
     } else if (typeof exceptionResponse === 'object') {
-      const responseObj = exceptionResponse as any;
+      const responseObj = exceptionResponse as ExceptionResponseObject;
 
       // 提取错误信息
       if (responseObj.message) {
@@ -46,7 +52,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       // 自定义错误码
       if (responseObj.code) {
-        errorCode = responseObj.code;
+        errorCode = responseObj.code as ErrorCodeType;
       }
     }
 
@@ -54,19 +60,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (status >= 500) {
       errorMessage = '服务器内部错误，请稍后重试';
       errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-    } else if (status === HttpStatus.UNAUTHORIZED) {
+    } else if (status === (HttpStatus.UNAUTHORIZED as number)) {
       errorMessage = errorMessage || '未授权访问';
       errorCode = ErrorCode.UNAUTHORIZED;
-    } else if (status === HttpStatus.FORBIDDEN) {
+    } else if (status === (HttpStatus.FORBIDDEN as number)) {
       errorMessage = errorMessage || '权限不足';
       errorCode = ErrorCode.FORBIDDEN;
-    } else if (status === HttpStatus.NOT_FOUND) {
+    } else if (status === (HttpStatus.NOT_FOUND as number)) {
       errorMessage = errorMessage || '资源不存在';
       errorCode = ErrorCode.RESOURCE_NOT_FOUND;
-    } else if (status === HttpStatus.BAD_REQUEST) {
+    } else if (status === (HttpStatus.BAD_REQUEST as number)) {
       errorMessage = errorMessage || '请求参数错误';
       errorCode = ErrorCode.VALIDATION_ERROR;
-    } else if (status === HttpStatus.UNPROCESSABLE_ENTITY) {
+    } else if (status === (HttpStatus.UNPROCESSABLE_ENTITY as number)) {
       errorMessage = errorMessage || '数据验证失败';
       errorCode = ErrorCode.VALIDATION_ERROR;
     }

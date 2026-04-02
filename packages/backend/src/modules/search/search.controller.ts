@@ -26,14 +26,27 @@ export class SearchController {
   @ApiOperation({ summary: '全局搜索（文章/视频）' })
   @ApiQuery({ name: 'q', required: true, description: '搜索关键词' })
   @ApiQuery({ name: 'page', required: false, description: '页码，默认为1' })
-  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量，默认为20，最大100' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量，默认为20，最大100',
+  })
   @ApiQuery({
     name: 'sortBy',
     required: false,
-    description: '排序字段：relevance（相关度）、createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
+    description:
+      '排序字段：relevance（相关度）、createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
   })
-  @ApiQuery({ name: 'sortOrder', required: false, description: '排序顺序：desc（降序）或 asc（升序）' })
-  @ApiQuery({ name: 'type', required: false, description: '内容类型过滤：article（文章）、video（视频）、all（全部）' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: '排序顺序：desc（降序）或 asc（升序）',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: '内容类型过滤：article（文章）、video（视频）、all（全部）',
+  })
   @ApiQuery({ name: 'category', required: false, description: '分类过滤' })
   @ApiQuery({ name: 'tag', required: false, description: '标签过滤' })
   @ApiQuery({ name: 'author', required: false, description: '作者用户名过滤' })
@@ -103,7 +116,10 @@ export class SearchController {
     }
 
     const currentUserId = req?.user?.id;
-    const results = await this.searchService.search(searchQueryDto, currentUserId);
+    const results = await this.searchService.search(
+      searchQueryDto,
+      currentUserId,
+    );
 
     return {
       success: true,
@@ -155,7 +171,11 @@ export class SearchController {
 
   @Get('popular')
   @ApiOperation({ summary: '获取热门搜索关键词' })
-  @ApiQuery({ name: 'limit', required: false, description: '返回数量，默认为10，最大50' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '返回数量，默认为10，最大50',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取热门搜索成功',
@@ -163,7 +183,18 @@ export class SearchController {
       example: {
         success: true,
         data: {
-          keywords: ['技术', '编程', 'JavaScript', 'TypeScript', 'Vue', 'React', 'Node.js', '后端开发', '前端开发', '数据库'],
+          keywords: [
+            '技术',
+            '编程',
+            'JavaScript',
+            'TypeScript',
+            'Vue',
+            'React',
+            'Node.js',
+            '后端开发',
+            '前端开发',
+            '数据库',
+          ],
         },
         message: '获取热门搜索成功',
       },
@@ -186,17 +217,23 @@ export class SearchController {
   @ApiOperation({ summary: '高级搜索（需要认证，支持更复杂的查询）' })
   @ApiQuery({ name: 'q', required: true, description: '搜索关键词' })
   @ApiQuery({ name: 'page', required: false, description: '页码，默认为1' })
-  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量，默认为20，最大100' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量，默认为20，最大100',
+  })
   @ApiQuery({
     name: 'fields',
     required: false,
-    description: '搜索字段：title（标题）、content（内容）、tags（标签）、all（全部）',
+    description:
+      '搜索字段：title（标题）、content（内容）、tags（标签）、all（全部）',
     enum: ['title', 'content', 'tags', 'all'],
   })
   @ApiQuery({
     name: 'dateRange',
     required: false,
-    description: '时间范围：today（今天）、week（本周）、month（本月）、year（本年）、all（全部）',
+    description:
+      '时间范围：today（今天）、week（本周）、month（本月）、year（本年）、all（全部）',
     enum: ['today', 'week', 'month', 'year', 'all'],
   })
   @ApiResponse({
@@ -228,7 +265,10 @@ export class SearchController {
 
     // 这里可以实现更高级的搜索逻辑
     // 目前先调用基础的搜索服务
-    const results = await this.searchService.search(searchQueryDto, currentUserId);
+    const results = await this.searchService.search(
+      searchQueryDto,
+      currentUserId,
+    );
 
     return {
       success: true,

@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsIn, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsIn,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -70,7 +77,8 @@ export class GetArticlesQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: '排序字段：createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
+    description:
+      '排序字段：createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
     example: 'createdAt',
     enum: ['createdAt', 'views', 'likes', 'comments'],
   })

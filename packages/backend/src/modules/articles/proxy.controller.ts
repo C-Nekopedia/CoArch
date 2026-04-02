@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Param,
   Res,
   HttpException,
   HttpStatus,
@@ -14,17 +13,18 @@ import axios from 'axios';
 @Controller('proxy')
 export class ImageProxyController {
   private readonly BILIBILI_REFERER = 'https://www.bilibili.com';
-  private readonly USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+  private readonly USER_AGENT =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
   @Get('image')
   @Header('Cache-Control', 'public, max-age=86400')
   async proxyImage(@Query('url') encodedUrl: string, @Res() res: Response) {
-    console.log('代理请求收到，encodedUrl:', encodedUrl);
     try {
       // 解码Base64编码的URL（前端使用encodeURIComponent编码）
-      console.log('解码前:', encodedUrl);
-      const imageUrl = decodeURIComponent(Buffer.from(encodedUrl, 'base64').toString('utf-8'));
-      console.log('解码后图片URL:', imageUrl);
+      const imageUrl = decodeURIComponent(
+        Buffer.from(encodedUrl, 'base64').toString('utf-8'),
+      );
+      console.log('代理图片请求，URL长度:', imageUrl.length);
 
       // 验证URL，只允许B站图片
       if (!this.isValidBilibiliImageUrl(imageUrl)) {
@@ -36,11 +36,11 @@ export class ImageProxyController {
         responseType: 'stream',
         headers: {
           'User-Agent': this.USER_AGENT,
-          'Referer': this.BILIBILI_REFERER,
-          'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+          Referer: this.BILIBILI_REFERER,
+          Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
         timeout: 10000,
       });
@@ -63,13 +63,13 @@ export class ImageProxyController {
       if (error.response) {
         throw new HttpException(
           `上游服务器错误: ${error.response.status}`,
-          HttpStatus.BAD_GATEWAY
+          HttpStatus.BAD_GATEWAY,
         );
       }
 
       throw new HttpException(
         '图片代理服务暂时不可用',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -104,7 +104,7 @@ export class ImageProxyController {
       // 检查文件扩展名
       const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
       const extension = parsedUrl.pathname.toLowerCase();
-      return validExtensions.some(ext => extension.endsWith(ext));
+      return validExtensions.some((ext) => extension.endsWith(ext));
     } catch {
       return false;
     }

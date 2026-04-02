@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/utils.sh"
 # 默认值
 DEFAULT_ENV="development"
 DEFAULT_DOMAIN="localhost"
-DEFAULT_BACKEND_PORT="3000"
+DEFAULT_BACKEND_PORT="3001"
 DEFAULT_FRONTEND_PORT="5173"
 
 # 显示使用说明
@@ -179,7 +179,7 @@ services:
       REDIS_URL: \${REDIS_URL}
       JWT_SECRET: \${JWT_SECRET}
       JWT_EXPIRES_IN: \${JWT_EXPIRES_IN}
-      API_PORT: \${BACKEND_PORT}
+      API_PORT: 3000
     ports:
       - "\${BACKEND_PORT}:3000"
     volumes:

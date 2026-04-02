@@ -21,11 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import {
-  CommentsService,
-  CommentResponse,
-  PaginatedComments,
-} from './comments.service';
+import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { ArticleIdParamDto } from './dto/article-id-param.dto';
@@ -110,7 +106,11 @@ export class CommentsController {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @ApiQuery({ name: 'page', required: false, description: '页码，默认为1' })
-  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量，默认为20，最大100' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量，默认为20，最大100',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取评论列表成功',
@@ -236,10 +236,7 @@ export class CommentsController {
     status: HttpStatus.NOT_FOUND,
     description: '评论不存在',
   })
-  async getCommentById(
-    @Param() params: CommentIdParamDto,
-    @Request() req?,
-  ) {
+  async getCommentById(@Param() params: CommentIdParamDto, @Request() req?) {
     const currentUserId = req?.user?.id;
     const comment = await this.commentsService.getCommentById(
       params.commentId,

@@ -263,7 +263,7 @@ export const useArticlesStore = defineStore('articles', () => {
 
     try {
       // 获取文章详情（带令牌自动刷新）
-      const articleResponse = await api.requestWithRetry<any>(API_ENDPOINTS.ARTICLES.DETAIL(Number(id)), {
+      const articleResponse = await api.requestWithRetry<any>(API_ENDPOINTS.ARTICLES.DETAIL(id), {
         method: 'GET',
       })
       if (!articleResponse.success || !articleResponse.data) {
@@ -305,7 +305,7 @@ export const useArticlesStore = defineStore('articles', () => {
       }
 
       // 获取评论列表（带令牌自动刷新）
-      const commentsResponse = await api.requestWithRetry<any>(API_ENDPOINTS.COMMENTS.LIST(Number(id)), {
+      const commentsResponse = await api.requestWithRetry<any>(API_ENDPOINTS.COMMENTS.LIST(id), {
         method: 'GET',
         params: {
           page: 1,
@@ -362,7 +362,7 @@ export const useArticlesStore = defineStore('articles', () => {
         requestBody.parentId = parentId
       }
 
-      const response = await api.requestWithRetry<any>(API_ENDPOINTS.COMMENTS.CREATE(Number(articleId)), {
+      const response = await api.requestWithRetry<any>(API_ENDPOINTS.COMMENTS.CREATE(articleId), {
         method: 'POST',
         body: requestBody,
       })
@@ -473,7 +473,7 @@ export const useArticlesStore = defineStore('articles', () => {
   // 点赞文章 - 真实API调用
   const likeArticle = async (id: string) => {
     try {
-      const response = await api.requestWithRetry<{ likes: number; isLiked: boolean }>(API_ENDPOINTS.ARTICLES.LIKE(Number(id)), {
+      const response = await api.requestWithRetry<{ likes: number; isLiked: boolean }>(API_ENDPOINTS.ARTICLES.LIKE(id), {
         method: 'POST',
       })
 
@@ -506,7 +506,7 @@ export const useArticlesStore = defineStore('articles', () => {
 
     try {
       console.log('更新文章请求:', { id, articleData })
-      const response = await api.requestWithRetry<any>(API_ENDPOINTS.ARTICLES.UPDATE(Number(id)), {
+      const response = await api.requestWithRetry<any>(API_ENDPOINTS.ARTICLES.UPDATE(id), {
         method: 'PUT',
         body: JSON.stringify(articleData),
       })
@@ -572,7 +572,7 @@ export const useArticlesStore = defineStore('articles', () => {
     error.value = null
 
     try {
-      const response = await api.requestWithRetry<DeleteArticleResponse>(API_ENDPOINTS.ARTICLES.DELETE(Number(id)), {
+      const response = await api.requestWithRetry<DeleteArticleResponse>(API_ENDPOINTS.ARTICLES.DELETE(id), {
         method: 'DELETE',
       })
 

@@ -36,6 +36,7 @@ export class JwtAuthService {
 
     return this.jwtService.sign(accessPayload, {
       secret: this.appConfig.jwt.secret,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expiresIn: this.appConfig.jwt.accessTokenExpiresIn as any,
     });
   }
@@ -54,6 +55,7 @@ export class JwtAuthService {
 
     return this.jwtService.sign(refreshPayload, {
       secret: this.appConfig.jwt.secret,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expiresIn: this.appConfig.jwt.refreshTokenExpiresIn as any,
     });
   }
@@ -66,7 +68,7 @@ export class JwtAuthService {
       return this.jwtService.verify<T>(token, {
         secret: this.appConfig.jwt.secret,
       });
-    } catch (error) {
+    } catch {
       throw new Error('无效的令牌');
     }
   }

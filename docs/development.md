@@ -89,14 +89,14 @@ cp packages/frontend/.env.example packages/frontend/.env.development
 DATABASE_URL="postgresql://coarch:password@localhost:5432/coarch?schema=public"
 
 # Redis 配置（可选）
-REDIS_URL="redis://localhost:6379"
+REDIS_URL="redis://localhost:6379"  # 可选，用于缓存功能
 
 # JWT 配置
 JWT_SECRET="your-jwt-secret-key-change-this"
 JWT_EXPIRES_IN="7d"
 
 # 应用配置
-API_PORT=3000
+API_PORT=3001
 NODE_ENV=development
 
 # 文件上传
@@ -141,8 +141,8 @@ npm run dev
 ### 7. 访问应用
 
 - **前端开发服务器**：http://localhost:5173
-- **后端 API**：http://localhost:3000/api
-- **API 文档**：http://localhost:3000/api/docs
+- **后端 API**：http://localhost:3001/api
+- **API 文档**：http://localhost:3001/api/docs
 - **Prisma Studio**（数据库管理）：`npx prisma studio`
 
 ## 代码规范
@@ -203,6 +203,12 @@ npm run dev
    - 使用 `class-validator` 进行输入验证
    - 为每个 API 端点创建对应的 DTO
    - 使用共享包中的类型定义作为基础
+
+**验证管道配置注意事项**：
+   - 项目使用 `class-validator@0.13.2` 和 `class-transformer@0.5.1`，与 NestJS 11 兼容
+   - 验证管道配置在 `main.ts` 中统一管理，避免在 `app.module.ts` 中重复配置
+   - 如果遇到 "class-validator package is missing" 警告，这是 NestJS 的误报，可忽略
+   - 全局验证管道已启用 `transform: true`，自动转换请求数据为 DTO 实例
 
 3. **错误处理**
    - 使用 NestJS 的异常过滤器
@@ -386,6 +392,186 @@ cd packages/frontend && npm run build
 
 请参阅 [CONTRIBUTING.md](../CONTRIBUTING.md) 了解如何为项目做贡献。
 
+## 缓存系统
+
+CoArch 使用 Redis 作为缓存层，提供高性能的数据访问。
+
+### 缓存配置
+
+1. **Redis 配置**：在 `.env` 文件中设置 Redis 连接参数：
+   ```env
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=
+   ```
+
+2. **缓存模块**：位于 `src/shared/redis/`，提供统一的缓存服务接口。
+
+### 缓存使用
+
+#### 文章缓存
+- 文章详情缓存：键格式 `article:{id}`，TTL 60分钟
+- 点赞状态缓存：键格式 `article:{id}:like:{userId}`，TTL 5分钟
+- 更新/删除文章时自动清除相关缓存
+
+#### 缓存服务 API
+```typescript
+// 基本操作
+await redisService.get<T>(key);
+await redisService.set<T>(key, value, ttl);
+await redisService.del(key);
+
+// 高级操作
+await redisService.getOrSet(key, fetchFn, ttl); // 缓存穿透保护
+await redisService.getOrSetWithLock(key, fetchFn, ttl); // 缓存击穿保护
+```
+
+### 缓存策略
+- **读多写少**：长时间缓存，更新时清除
+- **高频更新**：短时间缓存或直接穿透
+- **热点数据**：使用锁防止缓存击穿
+
+## 日志系统
+
+CoArch 使用结构化日志系统，基于 Pino 实现高性能日志记录。
+
+### 日志配置
+
+1. **开发环境**：美化输出，包含颜色和格式化时间
+2. **生产环境**：JSON 格式输出，便于日志收集和分析
+
+### 日志级别
+- `debug`: 调试信息（开发环境）
+- `info`: 常规操作信息
+- `warn`: 警告信息
+- `error`: 错误信息
+- `fatal`: 致命错误
+
+### 日志内容
+- **HTTP 请求**：自动记录请求方法、URL、状态码、耗时
+- **业务操作**：记录关键业务操作和性能指标
+- **错误追踪**：完整的错误堆栈和上下文信息
+
+### 请求追踪
+每个 HTTP 请求都有唯一的 `X-Request-ID`，便于：
+- 追踪请求链路
+- 关联相关日志
+- 调试分布式系统
+
+### 日志使用
+
+```typescript
+// 在服务中使用
+this.logger.info('操作完成', { userId, articleId });
+this.logger.error('操作失败', error, { context: 'ArticlesService' });
+
+// 记录 HTTP 请求（中间件自动处理）
+// 记录性能指标
+this.logger.logMetric('api_response_time', duration, 'ms', { endpoint: '/api/articles' });
+```
+
+## 性能监控
+
+### 缓存命中率监控
+通过日志记录缓存命中/未命中情况，分析缓存效果。
+
+### API 性能监控
+- 请求响应时间分布
+- 错误率和慢查询
+- 数据库查询性能
+
+### 资源使用监控
+- Redis 内存使用
+- 数据库连接池
+- 服务器资源使用率
+
+## 高级优化功能
+
+### 健康检查系统
+CoArch 提供了完整的健康检查端点，用于监控系统各组件状态：
+
+#### 健康检查端点
+- `GET /api/v1/health` - 完整健康检查（数据库、Redis、内存）
+- `GET /api/v1/health/ready` - 就绪检查（更严格）
+- `GET /api/v1/health/live` - 存活检查（用于负载均衡器）
+- `GET /api/v1/health/info` - 系统信息
+- `GET /api/v1/health/cache-stats` - 缓存统计信息
+- `POST /api/v1/health/cache-stats/reset` - 重置缓存统计
+
+#### 缓存统计监控
+Redis 缓存系统提供详细的统计信息：
+- 命中率监控（整体和按前缀分组）
+- 内存使用情况
+- 操作计数（get、set、delete）
+- 错误统计
+
+### 性能指标收集（Prometheus）
+系统集成了 Prometheus 指标收集：
+
+#### 指标端点
+- `GET /api/v1/metrics` - Prometheus 格式指标
+
+#### 收集的指标
+- HTTP 请求计数和持续时间
+- 数据库查询性能和错误率
+- 缓存命中率和操作统计
+- 系统资源使用（内存、CPU、事件循环延迟）
+- 活动请求数
+
+### 请求限流和防护
+系统内置多层防护机制：
+
+#### 速率限制
+- 基于 IP 的请求频率限制
+- 可配置的时间窗口和最大请求数
+- 生产环境：100 请求/15分钟
+- 开发环境：1000 请求/小时
+
+#### 慢速限制
+- 针对频繁请求逐渐增加延迟
+- 防止 API 滥用和暴力攻击
+- 最大延迟限制为 5 秒
+
+#### 健康检查豁免
+- 健康检查端点不受限流影响
+- 确保监控系统始终可访问
+
+### 数据库查询优化
+
+#### 慢查询监控
+- 自动检测并记录慢查询
+- 可配置阈值（默认 100ms）
+- 详细的查询日志（开发环境）
+
+#### 查询性能分析
+- 查询类型分类（SELECT、INSERT、UPDATE等）
+- 执行时间统计
+- 错误追踪和报告
+
+### API 响应优化
+
+#### 压缩中间件
+- 智能内容类型压缩
+- 可配置的压缩级别和阈值
+- 支持 JSON、文本、JavaScript、XML 等格式
+
+#### 安全中间件
+- Helmet.js 安全头部（生产环境）
+- CORS 配置
+- 请求体大小限制
+
+## 环境变量配置
+
+新增优化相关环境变量：
+
+```env
+# 数据库性能监控
+DB_SLOW_QUERY_THRESHOLD=100  # 慢查询阈值（毫秒）
+
+# 日志配置
+LOG_LEVEL=debug  # 日志级别：debug, info, warn, error, fatal
+```
+
 ## 获取帮助
 
 - **GitHub Issues**：报告 bug 或请求功能
@@ -395,3 +581,11 @@ cd packages/frontend && npm run build
 ---
 
 *最后更新：2026-04-01*
+
+> **优化功能已全部实现**：
+> - ✅ 健康检查端点系统
+> - ✅ 缓存命中率监控和统计
+> - ✅ API响应压缩中间件
+> - ✅ 请求限流和并发控制
+> - ✅ Prometheus指标收集
+> - ✅ 数据库慢查询监控

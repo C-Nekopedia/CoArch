@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -32,11 +36,7 @@ export class UploadService {
     // 静态文件服务已配置serveRoot: '/uploads'，所以使用'/uploads'作为基础URL
     this.baseUrl = '/uploads';
 
-    console.log('UploadService配置:', {
-      uploadDir: this.uploadDir,
-      baseUrl: this.baseUrl,
-      uploadConfig
-    });
+    console.log('UploadService初始化完成，上传目录:', this.uploadDir);
 
     // 确保上传目录存在
     this.ensureUploadDir();
@@ -55,10 +55,8 @@ export class UploadService {
    * 获取文件存储配置
    */
   public getStorage(): multer.StorageEngine {
-    console.log('getStorage被调用，上传目录:', this.uploadDir);
     return multer.diskStorage({
       destination: (_req, file, cb) => {
-        console.log('磁盘存储目标目录:', this.uploadDir, '原始文件名:', file.originalname);
         cb(null, this.uploadDir);
       },
       filename: (_req, file, cb) => {
@@ -66,7 +64,6 @@ export class UploadService {
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
         const ext = path.extname(file.originalname);
         const filename = `${uuidv4()}-${uniqueSuffix}${ext}`;
-        console.log('生成文件名:', filename, '原始文件名:', file.originalname);
         cb(null, filename);
       },
     });
@@ -75,15 +72,13 @@ export class UploadService {
   /**
    * 获取文件过滤器
    */
-  public getFileFilter(allowedMimeTypes: string[]): multer.Options['fileFilter'] {
-    console.log('getFileFilter被调用，允许的MIME类型:', allowedMimeTypes);
+  public getFileFilter(
+    allowedMimeTypes: string[],
+  ): multer.Options['fileFilter'] {
     return (_req, file, cb) => {
-      console.log('文件过滤器检查:', file.mimetype, '原始文件名:', file.originalname);
       if (allowedMimeTypes.includes(file.mimetype)) {
-        console.log('文件类型通过');
         cb(null, true);
       } else {
-        console.log('文件类型拒绝:', file.mimetype);
         cb(new Error(`不支持的文件类型: ${file.mimetype}`) as any, false);
       }
     };
@@ -116,14 +111,14 @@ export class UploadService {
     }
 
     try {
-      console.log('上传文件对象:', {
-        originalname: file.originalname,
-        filename: file.filename,
-        path: file.path,
-        size: file.size,
-        mimetype: file.mimetype,
-        fieldname: file.fieldname
-      });
+      console.log(
+        '上传文件:',
+        file.originalname,
+        '大小:',
+        file.size,
+        '类型:',
+        file.mimetype,
+      );
       if (!file.filename) {
         throw new BadRequestException('文件名不能为空');
       }
@@ -140,7 +135,11 @@ export class UploadService {
       };
     } catch (error) {
       // 如果上传失败，删除已保存的文件
-      if (file?.path && typeof file.path === 'string' && fs.existsSync(file.path)) {
+      if (
+        file?.path &&
+        typeof file.path === 'string' &&
+        fs.existsSync(file.path)
+      ) {
         fs.unlinkSync(file.path);
       }
       throw new InternalServerErrorException(`文件上传失败: ${error.message}`);
@@ -174,7 +173,9 @@ export class UploadService {
           fs.unlinkSync(result.path);
         }
       }
-      throw new InternalServerErrorException(`部分文件上传失败: ${errors.map(e => e.message).join(', ')}`);
+      throw new InternalServerErrorException(
+        `部分文件上传失败: ${errors.map((e) => e.message).join(', ')}`,
+      );
     }
 
     return results;
@@ -190,7 +191,9 @@ export class UploadService {
       try {
         fs.unlinkSync(filePath);
       } catch (error) {
-        throw new InternalServerErrorException(`文件删除失败: ${error.message}`);
+        throw new InternalServerErrorException(
+          `文件删除失败: ${error.message}`,
+        );
       }
     }
   }
@@ -264,9 +267,15 @@ export class UploadService {
     return this.createMulterInstance({
       maxSize: 50 * 1024 * 1024, // 50MB
       allowedMimeTypes: [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/quicktime', 'video/x-msvideo',
-        'application/pdf', 'text/plain',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'video/mp4',
+        'video/quicktime',
+        'video/x-msvideo',
+        'application/pdf',
+        'text/plain',
       ],
     });
   }
@@ -275,15 +284,18 @@ export class UploadService {
    * 获取图片上传的Multer选项
    */
   getImageUploadOptions(): multer.Options {
-    console.log('getImageUploadOptions被调用');
     const options = {
       storage: this.getStorage(),
-      fileFilter: this.getFileFilter(['image/jpeg', 'image/png', 'image/gif', 'image/webp']),
+      fileFilter: this.getFileFilter([
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ]),
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
     };
-    console.log('图片上传选项已生成，storage类型:', typeof options.storage);
     return options;
   }
 
@@ -293,7 +305,11 @@ export class UploadService {
   getVideoUploadOptions(): multer.Options {
     return {
       storage: this.getStorage(),
-      fileFilter: this.getFileFilter(['video/mp4', 'video/quicktime', 'video/x-msvideo']),
+      fileFilter: this.getFileFilter([
+        'video/mp4',
+        'video/quicktime',
+        'video/x-msvideo',
+      ]),
       limits: {
         fileSize: 100 * 1024 * 1024, // 100MB
       },
@@ -307,9 +323,15 @@ export class UploadService {
     return {
       storage: this.getStorage(),
       fileFilter: this.getFileFilter([
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/quicktime', 'video/x-msvideo',
-        'application/pdf', 'text/plain',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'video/mp4',
+        'video/quicktime',
+        'video/x-msvideo',
+        'application/pdf',
+        'text/plain',
       ]),
       limits: {
         fileSize: 50 * 1024 * 1024, // 50MB
@@ -323,7 +345,12 @@ export class UploadService {
   getMultipleImagesUploadOptions(maxCount: number = 10): multer.Options {
     return {
       storage: this.getStorage(),
-      fileFilter: this.getFileFilter(['image/jpeg', 'image/png', 'image/gif', 'image/webp']),
+      fileFilter: this.getFileFilter([
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+      ]),
       limits: {
         fileSize: 5 * 1024 * 1024, // 每个文件5MB
         files: maxCount,

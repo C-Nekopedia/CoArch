@@ -170,6 +170,20 @@ check_environment() {
         fi
     fi
 
+    # 检查Redis（可选）
+    if command -v redis-cli &> /dev/null; then
+        REDIS_VERSION=$(redis-cli --version | awk '{print $2}')
+        echo "✓ Redis: $REDIS_VERSION"
+        # 测试Redis连接
+        if redis-cli ping &> /dev/null; then
+            echo "✓ Redis连接: 正常"
+        else
+            echo "⚠ Redis连接: 无法连接（缓存功能将不可用）"
+        fi
+    else
+        echo "⚠ Redis: 未安装（缓存功能将不可用）"
+    fi
+
     echo "环境检查完成"
 }
 

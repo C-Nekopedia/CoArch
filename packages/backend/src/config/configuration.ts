@@ -69,13 +69,10 @@ export interface AllConfig {
 /**
  * 配置验证函数（实际项目中应使用更严格的验证）
  */
-function validateConfig(config: Record<string, any>): void {
-  const requiredEnvVars = [
-    'DATABASE_URL',
-    'JWT_SECRET',
-  ];
+function validateConfig(): void {
+  const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
 
-  const missing = requiredEnvVars.filter(key => !process.env[key]);
+  const missing = requiredEnvVars.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     throw new Error(`缺少必需的环境变量: ${missing.join(', ')}`);
   }
@@ -88,30 +85,14 @@ function validateConfig(config: Record<string, any>): void {
 }
 
 export default registerAs('config', (): AllConfig => {
-  validateConfig(process.env);
-
-  // 解析文件大小字符串（如 '10MB'）为字节数
-  const parseFileSize = (sizeStr: string): number => {
-    const units = {
-      B: 1,
-      KB: 1024,
-      MB: 1024 * 1024,
-      GB: 1024 * 1024 * 1024,
-    };
-
-    const match = sizeStr.match(/^(\d+(\.\d+)?)\s*(B|KB|MB|GB)$/i);
-    if (!match) {
-      return 10 * 1024 * 1024; // 默认10MB
-    }
-
-    const value = parseFloat(match[1]);
-    const unit = match[3].toUpperCase();
-    return value * (units[unit as keyof typeof units] || 1);
-  };
+  validateConfig();
 
   // 解析逗号分隔的字符串为数组
   const parseCommaSeparated = (str: string): string[] => {
-    return str.split(',').map(s => s.trim()).filter(Boolean);
+    return str
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   };
 
   return {
@@ -138,8 +119,13 @@ export default registerAs('config', (): AllConfig => {
     upload: {
       path: process.env.UPLOAD_PATH || './uploads',
       maxFileSize: process.env.MAX_FILE_SIZE || '10MB',
-      allowedImageTypes: parseCommaSeparated(process.env.ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/gif,image/webp'),
-      allowedVideoTypes: parseCommaSeparated(process.env.ALLOWED_VIDEO_TYPES || 'video/mp4,video/webm'),
+      allowedImageTypes: parseCommaSeparated(
+        process.env.ALLOWED_IMAGE_TYPES ||
+          'image/jpeg,image/png,image/gif,image/webp',
+      ),
+      allowedVideoTypes: parseCommaSeparated(
+        process.env.ALLOWED_VIDEO_TYPES || 'video/mp4,video/webm',
+      ),
     },
     throttle: {
       ttl: parseInt(process.env.THROTTLE_TTL || '60', 10),

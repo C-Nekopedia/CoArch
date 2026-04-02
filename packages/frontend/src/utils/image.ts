@@ -3,7 +3,7 @@
  */
 
 // API基础URL，与api.ts保持一致
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+const API_BASE_URL = '/api/v1' // 硬编码使用Vite代理路径
 
 /**
  * 是否为B站图片URL

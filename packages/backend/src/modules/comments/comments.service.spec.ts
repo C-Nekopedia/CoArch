@@ -53,7 +53,7 @@ describe('CommentsService', () => {
       const userId = 'user-123';
       const createCommentDto = {
         content: 'Test comment',
-        parentId: null,
+        parentId: undefined,
       };
 
       const mockArticle = {
@@ -86,7 +86,11 @@ describe('CommentsService', () => {
       mockPrismaService.comment.create.mockResolvedValue(mockComment);
       mockPrismaService.article.update.mockResolvedValue({});
 
-      const result = await service.createComment(articleId, userId, createCommentDto);
+      const result = await service.createComment(
+        articleId,
+        userId,
+        createCommentDto,
+      );
 
       expect(result).toEqual({
         id: mockComment.id,

@@ -11,12 +11,18 @@ import {
   Body,
   Res,
   HttpStatus,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UploadService, UploadResult } from './upload.service';
 import { Response } from 'express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+  ApiResponse,
+} from '@nestjs/swagger';
 import * as multer from 'multer';
 
 @ApiTags('upload')
@@ -46,14 +52,19 @@ export class UploadController {
     },
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: '上传成功' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '文件不能为空或文件类型不支持' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '文件不能为空或文件类型不支持',
+  })
   @UseInterceptors(
     FileInterceptor('file', (req, file, callback) => {
       // 返回图片上传选项
       return this.uploadService.getImageUploadOptions();
-    })
+    }),
   )
-  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
     try {
       if (!file) {
         throw new BadRequestException('请选择要上传的图片文件');
@@ -92,14 +103,19 @@ export class UploadController {
     },
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: '上传成功' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '文件不能为空或文件类型不支持' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '文件不能为空或文件类型不支持',
+  })
   @UseInterceptors(
     FilesInterceptor('files', 10, (req, file, callback) => {
       // 返回多图上传选项
       return this.uploadService.getMultipleImagesUploadOptions();
-    })
+    }),
   )
-  async uploadImages(@UploadedFiles() files: Express.Multer.File[]): Promise<{ success: boolean; data?: UploadResult[]; error?: string }> {
+  async uploadImages(
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<{ success: boolean; data?: UploadResult[]; error?: string }> {
     try {
       if (!files || files.length === 0) {
         throw new BadRequestException('请选择要上传的图片文件');
@@ -135,14 +151,19 @@ export class UploadController {
     },
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: '上传成功' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '文件不能为空或文件类型不支持' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '文件不能为空或文件类型不支持',
+  })
   @UseInterceptors(
     FileInterceptor('file', (req, file, callback) => {
       // 返回视频上传选项
       return this.uploadService.getVideoUploadOptions();
-    })
+    }),
   )
-  async uploadVideo(@UploadedFile() file: Express.Multer.File): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
+  async uploadVideo(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
     try {
       if (!file) {
         throw new BadRequestException('请选择要上传的视频文件');
@@ -178,14 +199,19 @@ export class UploadController {
     },
   })
   @ApiResponse({ status: HttpStatus.CREATED, description: '上传成功' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '文件不能为空或文件类型不支持' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: '文件不能为空或文件类型不支持',
+  })
   @UseInterceptors(
     FileInterceptor('file', (req, file, callback) => {
       // 返回通用文件上传选项
       return this.uploadService.getGenericUploadOptions();
-    })
+    }),
   )
-  async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
     try {
       if (!file) {
         throw new BadRequestException('请选择要上传的文件');
@@ -208,7 +234,9 @@ export class UploadController {
   @ApiOperation({ summary: '获取文件信息' })
   @ApiResponse({ status: HttpStatus.OK, description: '文件信息获取成功' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '文件不存在' })
-  async getFileInfo(@Param('filename') filename: string): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
+  async getFileInfo(
+    @Param('filename') filename: string,
+  ): Promise<{ success: boolean; data?: UploadResult; error?: string }> {
     try {
       const fileInfo = this.uploadService.getFileInfo(filename);
 
@@ -235,7 +263,9 @@ export class UploadController {
   @ApiOperation({ summary: '删除文件' })
   @ApiResponse({ status: HttpStatus.OK, description: '文件删除成功' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '文件不存在' })
-  async deleteFile(@Param('filename') filename: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  async deleteFile(
+    @Param('filename') filename: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       await this.uploadService.deleteFile(filename);
       return {
@@ -254,7 +284,10 @@ export class UploadController {
   @ApiOperation({ summary: '下载文件' })
   @ApiResponse({ status: HttpStatus.OK, description: '文件下载成功' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '文件不存在' })
-  async downloadFile(@Param('filename') filename: string, @Res() res: Response): Promise<void> {
+  async downloadFile(
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ): Promise<void> {
     try {
       const fileInfo = this.uploadService.getFileInfo(filename);
 

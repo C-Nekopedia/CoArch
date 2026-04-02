@@ -17,11 +17,11 @@ const router = createRouter({
 })
 
 // 路由守卫：认证检查
-// TODO: 后端集成注意事项
-// 1. 当前认证检查仅依赖本地token存在性，未验证token有效性
-// 2. 后端需要提供token验证接口，建议实现：GET /api/auth/verify 或使用中间件验证
-// 3. 需要考虑token刷新机制，避免用户在操作过程中突然需要重新登录
-// 4. 对于需要敏感权限的路由，建议后端返回用户权限信息进行细粒度控制
+// 当前实现说明：
+// 1. 认证检查基于本地token存在性（token有效性通过后端API调用时验证）
+// 2. 后端已提供/auth/profile接口（需JWT守卫），可用于token有效性验证
+// 3. token刷新机制已实现：使用refresh token刷新access token
+// 4. 敏感权限路由通过内容所有权检查（article.authorId === user.id）
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
   const uiStore = useUIStore()

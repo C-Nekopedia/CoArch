@@ -1,10 +1,17 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+  Inject,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { JwtAuthService, TokenPayload } from './jwt.service';
 import { ConfigType } from '@nestjs/config';
 import config from '../../config/configuration';
+import { Prisma } from '../../generated/prisma/browser';
 
 export interface RegisterUserDto {
   username: string;
@@ -38,6 +45,18 @@ export interface AuthResponse {
   };
 }
 
+export interface ValidatedUser {
+  id: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  bio?: string;
+  followersCount?: number;
+  followingCount?: number;
+  articleCount?: number;
+  videoCount?: number;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -59,11 +78,16 @@ export class AuthService {
     const unit = match[2].toLowerCase();
 
     switch (unit) {
-      case 's': return value; // 秒
-      case 'm': return value * 60; // 分钟
-      case 'h': return value * 60 * 60; // 小时
-      case 'd': return value * 24 * 60 * 60; // 天
-      default: return value * 60; // 默认按分钟处理
+      case 's':
+        return value; // 秒
+      case 'm':
+        return value * 60; // 分钟
+      case 'h':
+        return value * 60 * 60; // 小时
+      case 'd':
+        return value * 24 * 60 * 60; // 天
+      default:
+        return value * 60; // 默认按分钟处理
     }
   }
 
@@ -164,7 +188,7 @@ export class AuthService {
     });
 
     // 移除密码哈希字段
-    const { passwordHash, deletedAt, ...userWithoutSensitiveData } = user;
+    const { passwordHash: _passwordHash, deletedAt: _deletedAt, ...userWithoutSensitiveData } = user;
 
     // 生成令牌
     return this.generateAuthResponse(userWithoutSensitiveData);
@@ -178,7 +202,7 @@ export class AuthService {
     let payload;
     try {
       payload = this.jwtAuthService.verifyRefreshToken(refreshToken);
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('无效的刷新令牌');
     }
 
@@ -188,7 +212,11 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!tokenRecord || tokenRecord.revoked || tokenRecord.expiresAt < new Date()) {
+    if (
+      !tokenRecord ||
+      tokenRecord.revoked ||
+      tokenRecord.expiresAt < new Date()
+    ) {
       throw new UnauthorizedException('刷新令牌已过期或已被撤销');
     }
 
@@ -207,7 +235,8 @@ export class AuthService {
     });
 
     // 生成新的令牌对
-    const { passwordHash, deletedAt, ...userWithoutSensitiveData } = tokenRecord.user;
+    const { passwordHash: _passwordHash, deletedAt: _deletedAt, ...userWithoutSensitiveData } =
+      tokenRecord.user;
 
     return this.generateAuthResponse(userWithoutSensitiveData);
   }
@@ -274,7 +303,23 @@ export class AuthService {
   /**
    * 生成认证响应
    */
-  private async generateAuthResponse(user: any): Promise<AuthResponse> {
+  private async generateAuthResponse(
+    user: Prisma.UserGetPayload<{
+      select: {
+        id: true;
+        username: true;
+        email: true;
+        avatar: true;
+        bio: true;
+        followersCount: true;
+        followingCount: true;
+        articleCount: true;
+        videoCount: true;
+        createdAt: true;
+        updatedAt: true;
+      };
+    }>,
+  ): Promise<AuthResponse> {
     const tokenPayload: TokenPayload = {
       sub: user.id,
       username: user.username,
@@ -292,7 +337,10 @@ export class AuthService {
 
     // 生成令牌
     const accessToken = this.jwtAuthService.generateAccessToken(tokenPayload);
-    const refreshToken = this.jwtAuthService.generateRefreshToken(tokenPayload, refreshTokenRecord.id);
+    const refreshToken = this.jwtAuthService.generateRefreshToken(
+      tokenPayload,
+      refreshTokenRecord.id,
+    );
 
     // 更新刷新令牌记录的token字段为实际的JWT令牌
     await this.prisma.refreshToken.update({
@@ -301,7 +349,9 @@ export class AuthService {
     });
 
     // 计算访问令牌过期时间（秒）
-    const expiresIn = this.parseTimeToSeconds(this.appConfig.jwt.accessTokenExpiresIn);
+    const expiresIn = this.parseTimeToSeconds(
+      this.appConfig.jwt.accessTokenExpiresIn,
+    );
 
     return {
       token: accessToken, // 前端期望的字段名
@@ -311,14 +361,18 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
+        avatar: user.avatar || undefined,
+        bio: user.bio || undefined,
         followers: user.followersCount || 0, // 前端期望的字段名
         following: user.followingCount || 0, // 前端期望的字段名
         articleCount: user.articleCount || 0,
         videoCount: user.videoCount || 0,
-        createdAt: user.createdAt ? user.createdAt.toISOString() : new Date().toISOString(),
-        updatedAt: user.updatedAt ? user.updatedAt.toISOString() : new Date().toISOString(),
+        createdAt: user.createdAt
+          ? user.createdAt.toISOString()
+          : new Date().toISOString(),
+        updatedAt: user.updatedAt
+          ? user.updatedAt.toISOString()
+          : new Date().toISOString(),
       },
     };
   }
@@ -326,7 +380,7 @@ export class AuthService {
   /**
    * 验证用户凭证
    */
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<ValidatedUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
@@ -344,8 +398,12 @@ export class AuthService {
       },
     });
 
-    if (user && !user.deletedAt && await bcrypt.compare(password, user.passwordHash)) {
-      const { passwordHash, deletedAt, ...result } = user;
+    if (
+      user &&
+      !user.deletedAt &&
+      (await bcrypt.compare(password, user.passwordHash))
+    ) {
+      const { passwordHash: _passwordHash, deletedAt: _deletedAt, ...result } = user;
       return result;
     }
 

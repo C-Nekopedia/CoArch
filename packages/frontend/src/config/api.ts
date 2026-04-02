@@ -13,8 +13,8 @@ export type ApiResponse<T = any> = SharedApiResponse<T>
 
 // API基础URL，从环境变量读取
 // 注意：后端API路径为 /api/v1/，即使API_VERSION设置为'1'，NestJS也会自动添加'v'前缀
-// 开发环境配置为 http://localhost:3001/api/v1，生产环境通常为 /api
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+// 开发环境配置为 /api/v1（通过Vite代理到后端），生产环境通常为 /api
+const API_BASE_URL = '/api/v1' // 硬编码使用Vite代理路径
 
 // 请求超时时间（毫秒）
 const REQUEST_TIMEOUT = 30000

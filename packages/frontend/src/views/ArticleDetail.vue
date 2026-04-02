@@ -474,4 +474,23 @@ const toggleEditMenu = (event: MouseEvent) => {
   font-size: 18px;
   line-height: 1;
 }
+/* 文章内容中的图片样式 */
+.content-html :deep(img) {
+  max-width: 80% !important;
+  min-width: 30% !important;
+  height: auto !important;
+  width: auto !important;
+  display: block !important;
+  margin: 1em auto !important;
+  border-radius: 8px !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .content-html :deep(img) {
+    max-width: 100% !important;
+    min-width: 50% !important;
+  }
+}
+
 </style>

@@ -147,10 +147,7 @@ export class SearchService {
         // 2. 然后按浏览量
         // 3. 最后按创建时间
         // 注意：Prisma不支持条件排序，所以我们稍后会在内存中按相关度分数排序
-        orderBy = [
-          { viewsCount: sortOrder },
-          { createdAt: 'desc' },
-        ];
+        orderBy = [{ viewsCount: sortOrder }, { createdAt: 'desc' }];
       } else {
         // 没有搜索词时，按时间倒序
         orderBy = { createdAt: 'desc' };
@@ -209,7 +206,10 @@ export class SearchService {
           }
 
           // 摘要匹配权重中等
-          if (article.excerpt && article.excerpt.toLowerCase().includes(searchTerm)) {
+          if (
+            article.excerpt &&
+            article.excerpt.toLowerCase().includes(searchTerm)
+          ) {
             relevanceScore += 3;
           }
 
@@ -219,7 +219,10 @@ export class SearchService {
           }
 
           // 分类匹配权重中等
-          if (article.category && article.category.toLowerCase().includes(searchTerm)) {
+          if (
+            article.category &&
+            article.category.toLowerCase().includes(searchTerm)
+          ) {
             relevanceScore += 4;
           }
         }
@@ -425,7 +428,11 @@ export class SearchService {
     }
 
     // 添加原始搜索词的各种变体
-    suggestions.push(`${searchTerm} 教程`, `${searchTerm} 入门`, `${searchTerm} 高级`);
+    suggestions.push(
+      `${searchTerm} 教程`,
+      `${searchTerm} 入门`,
+      `${searchTerm} 高级`,
+    );
 
     return suggestions.slice(0, 5);
   }

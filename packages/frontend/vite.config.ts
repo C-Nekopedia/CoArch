@@ -19,7 +19,11 @@ export default defineConfig({
       '@types': fileURLToPath(new URL('./src/types', import.meta.url)),
     }
   },
+  optimizeDeps: {
+    include: ['@coarch/shared']
+  },
   server: {
+    port: 5173,
     proxy: {
       // 代理所有以/api开头的请求到后端
       '/api': {

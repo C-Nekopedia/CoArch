@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsNumber, IsIn, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsIn,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -35,9 +42,16 @@ export class SearchQueryDto {
   pageSize?: number = 20;
 
   @ApiPropertyOptional({
-    description: '排序字段：relevance（相关度）、createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
+    description:
+      '排序字段：relevance（相关度）、createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
     example: 'relevance',
-    enum: ['relevance', 'createdAt', 'viewsCount', 'likesCount', 'commentsCount'],
+    enum: [
+      'relevance',
+      'createdAt',
+      'viewsCount',
+      'likesCount',
+      'commentsCount',
+    ],
   })
   @IsOptional()
   @IsString()

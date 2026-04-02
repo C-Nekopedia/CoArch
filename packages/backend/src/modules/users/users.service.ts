@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ArticleResponse, PaginatedArticles } from '../articles/articles.service';
+import {
+  ArticleResponse,
+  PaginatedArticles,
+} from '../articles/articles.service';
 
 export interface UserProfile {
   id: string;
@@ -159,7 +162,10 @@ export class UsersService {
   /**
    * 关注用户
    */
-  async followUser(currentUserId: string, targetUsername: string): Promise<FollowStatus> {
+  async followUser(
+    currentUserId: string,
+    targetUsername: string,
+  ): Promise<FollowStatus> {
     // 获取目标用户
     const targetUser = await this.prisma.user.findUnique({
       where: {
@@ -240,7 +246,10 @@ export class UsersService {
   /**
    * 取消关注用户
    */
-  async unfollowUser(currentUserId: string, targetUsername: string): Promise<FollowStatus> {
+  async unfollowUser(
+    currentUserId: string,
+    targetUsername: string,
+  ): Promise<FollowStatus> {
     // 获取目标用户
     const targetUser = await this.prisma.user.findUnique({
       where: {
@@ -438,7 +447,10 @@ export class UsersService {
   /**
    * 检查当前用户是否关注目标用户
    */
-  async checkFollowStatus(currentUserId: string, targetUsername: string): Promise<boolean> {
+  async checkFollowStatus(
+    currentUserId: string,
+    targetUsername: string,
+  ): Promise<boolean> {
     const targetUser = await this.prisma.user.findUnique({
       where: {
         username: targetUsername,

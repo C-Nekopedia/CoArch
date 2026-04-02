@@ -2,6 +2,8 @@
 
 本文档提供 CoArch 项目在生产环境和开发环境的完整部署指南。项目支持三种部署模式：全容器化部署、混合部署和纯系统部署。
 
+> 📝 **项目状态说明**：CoArch目前处于半成品状态，部署脚本和核心功能已实现，但部分高级功能仍在完善中。本文档基于实际测试编写，提供可操作的部署指导。
+
 ## 部署概述
 
 ### 部署模式对比
@@ -29,7 +31,7 @@
 ### 网络要求
 - **HTTP 端口**：80（生产环境）
 - **HTTPS 端口**：443（生产环境）
-- **后端 API 端口**：3000（可配置）
+- **后端 API 端口**：3001（可配置）
 - **数据库端口**：5432（PostgreSQL）
 - **Redis 端口**：6379（可选）
 
@@ -579,7 +581,7 @@ systemctl status coarch-backend
 journalctl -xe -u coarch-backend
 
 # 检查端口占用
-sudo netstat -tlnp | grep :3000
+sudo netstat -tlnp | grep :3001
 ```
 
 #### 2. 数据库连接失败
@@ -752,7 +754,7 @@ sudo systemctl restart coarch-backend
 #   --mode=MODE          部署模式: docker, hybrid, system
 #   --env=ENV            环境: development, production
 #   --domain=DOMAIN      域名 (用于生产环境)
-#   --backend-port=PORT  后端端口 (默认: 3000)
+#   --backend-port=PORT  后端端口 (默认: 3001)
 #   --db-port=PORT       数据库端口 (默认: 5432)
 #   --redis-port=PORT    Redis端口 (默认: 6379)
 #   --help               显示帮助信息
@@ -763,11 +765,22 @@ sudo systemctl restart coarch-backend
 ```bash
 # 后端环境变量
 export DATABASE_URL="postgresql://coarch:password@localhost:5432/coarch"
-export REDIS_URL="redis://localhost:6379"
+export REDIS_URL="redis://localhost:6379"  # 可选，用于缓存功能
 export JWT_SECRET="your-jwt-secret-key"
 export JWT_EXPIRES_IN="7d"
-export API_PORT=3000
+export API_PORT=3001  # 注意：默认端口为3001，不是3000
 export NODE_ENV=production
+
+# 日志配置（nestjs-pino）
+export LOG_LEVEL="info"  # debug, info, warn, error
+export LOG_PRETTY="false"  # 生产环境设为false，开发环境可设为true
+export LOG_REDACT="true"  # 自动隐藏敏感信息
+
+# 缓存配置
+export REDIS_HOST="localhost"
+export REDIS_PORT="6379"
+export REDIS_PASSWORD=""  # 如果Redis有密码
+export CACHE_TTL="3600"  # 缓存默认过期时间（秒）
 
 # 前端环境变量
 export VITE_API_URL="https://coarch.example.com/api"

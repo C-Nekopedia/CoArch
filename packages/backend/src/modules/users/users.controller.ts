@@ -31,7 +31,12 @@ import * as multer from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UsersService, PublicUserProfile, UserProfile, FollowStatus } from './users.service';
+import {
+  UsersService,
+  PublicUserProfile,
+  UserProfile,
+  FollowStatus,
+} from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { GetUserParamsDto } from './dto/get-user-params.dto';
 import { UploadService } from '../upload/upload.service';
@@ -93,14 +98,17 @@ export class UsersController {
       },
     },
   })
-  async getCreators(
-    @Query('page') page = 1,
-    @Query('pageSize') pageSize = 20,
-  ) {
+  async getCreators(@Query('page') page = 1, @Query('pageSize') pageSize = 20) {
     const pageNum = Math.max(1, parseInt(page.toString(), 10));
-    const pageSizeNum = Math.max(1, Math.min(parseInt(pageSize.toString(), 10), 100));
+    const pageSizeNum = Math.max(
+      1,
+      Math.min(parseInt(pageSize.toString(), 10), 100),
+    );
 
-    const creatorsList = await this.usersService.getCreators(pageNum, pageSizeNum);
+    const creatorsList = await this.usersService.getCreators(
+      pageNum,
+      pageSizeNum,
+    );
     return {
       success: true,
       data: creatorsList,
@@ -187,7 +195,10 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: '用户不存在',
   })
-  async updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+  async updateProfile(
+    @Request() req,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
     const updatedProfile = await this.usersService.updateUserProfile(
       req.user.id,
       updateProfileDto,
@@ -230,7 +241,8 @@ export class UsersController {
             id: 'uuid',
             username: 'testuser',
             email: 'test@example.com',
-            avatar: '/uploads/avatar-550e8400-e29b-41d4-a716-446655440000-123456789.jpg',
+            avatar:
+              '/uploads/avatar-550e8400-e29b-41d4-a716-446655440000-123456789.jpg',
             bio: '热爱编程的开发者',
             followersCount: 0,
             followingCount: 0,
@@ -257,35 +269,45 @@ export class UsersController {
     status: HttpStatus.PAYLOAD_TOO_LARGE,
     description: '文件大小超过限制',
   })
-  @UseInterceptors(FileInterceptor('avatar', {
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => {
-        const uploadDir = './uploads';
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+          const uploadDir = './uploads';
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          cb(null, uploadDir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          const ext = path.extname(file.originalname);
+          const filename = `avatar-${uniqueSuffix}${ext}`;
+          cb(null, filename);
+        },
+      }),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
       },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        const ext = path.extname(file.originalname);
-        const filename = `avatar-${uniqueSuffix}${ext}`;
-        cb(null, filename);
+      fileFilter: (req, file, cb) => {
+        const allowedMimeTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ];
+        if (allowedMimeTypes.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new Error(`不支持的文件类型: ${file.mimetype}`), false);
+        }
       },
     }),
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-    fileFilter: (req, file, cb) => {
-      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (allowedMimeTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error(`不支持的文件类型: ${file.mimetype}`), false);
-      }
-    },
-  }))
-  async uploadAvatar(@Request() req, @UploadedFile() file: Express.Multer.File) {
+  )
+  async uploadAvatar(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) {
       throw new BadRequestException('文件不能为空');
     }
@@ -358,7 +380,10 @@ export class UsersController {
     description: '不能关注自己',
   })
   async followUser(@Request() req, @Param() params: GetUserParamsDto) {
-    const followStatus = await this.usersService.followUser(req.user.id, params.username);
+    const followStatus = await this.usersService.followUser(
+      req.user.id,
+      params.username,
+    );
     return {
       success: true,
       data: followStatus,
@@ -405,7 +430,10 @@ export class UsersController {
     description: '尚未关注该用户',
   })
   async unfollowUser(@Request() req, @Param() params: GetUserParamsDto) {
-    const followStatus = await this.usersService.unfollowUser(req.user.id, params.username);
+    const followStatus = await this.usersService.unfollowUser(
+      req.user.id,
+      params.username,
+    );
     return {
       success: true,
       data: followStatus,
@@ -477,7 +505,10 @@ export class UsersController {
     @Query('pageSize') pageSize = 20,
   ) {
     const pageNum = Math.max(1, parseInt(page.toString(), 10));
-    const pageSizeNum = Math.max(1, Math.min(parseInt(pageSize.toString(), 10), 100));
+    const pageSizeNum = Math.max(
+      1,
+      Math.min(parseInt(pageSize.toString(), 10), 100),
+    );
 
     const followingList = await this.usersService.getFollowingList(
       params.username,
@@ -555,7 +586,10 @@ export class UsersController {
     @Query('pageSize') pageSize = 20,
   ) {
     const pageNum = Math.max(1, parseInt(page.toString(), 10));
-    const pageSizeNum = Math.max(1, Math.min(parseInt(pageSize.toString(), 10), 100));
+    const pageSizeNum = Math.max(
+      1,
+      Math.min(parseInt(pageSize.toString(), 10), 100),
+    );
 
     const followersList = await this.usersService.getFollowersList(
       params.username,
@@ -577,8 +611,16 @@ export class UsersController {
     example: 'john_doe',
   })
   @ApiQuery({ name: 'page', required: false, description: '页码，默认为1' })
-  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量，默认为20，最大100' })
-  @ApiQuery({ name: 'type', required: false, description: '内容类型：article（文章）或 video（视频）' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量，默认为20，最大100',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: '内容类型：article（文章）或 video（视频）',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取用户内容列表成功',
@@ -638,7 +680,10 @@ export class UsersController {
     @Request() req?,
   ) {
     const pageNum = Math.max(1, parseInt(page.toString(), 10));
-    const pageSizeNum = Math.max(1, Math.min(parseInt(pageSize.toString(), 10), 100));
+    const pageSizeNum = Math.max(
+      1,
+      Math.min(parseInt(pageSize.toString(), 10), 100),
+    );
     const currentUserId = req?.user?.id;
 
     const result = await this.usersService.getUserArticles(

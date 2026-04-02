@@ -16,8 +16,10 @@ export interface BilibiliVideoInfo {
 
 @Injectable()
 export class BilibiliService {
-  private readonly BILIBILI_API_BASE = 'https://api.bilibili.com/x/web-interface/view';
-  private readonly BILIBILI_SHARE_URL_REGEX = /(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(?:BV([a-zA-Z0-9]+)|av(\d+))/i;
+  private readonly BILIBILI_API_BASE =
+    'https://api.bilibili.com/x/web-interface/view';
+  private readonly BILIBILI_SHARE_URL_REGEX =
+    /(?:https?:\/\/)?(?:www\.)?bilibili\.com\/video\/(?:BV([a-zA-Z0-9]+)|av(\d+))/i;
 
   /**
    * 从B站分享链接中提取视频ID
@@ -58,8 +60,9 @@ export class BilibiliService {
       // 调用B站API
       const response = await axios.get(apiUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://www.bilibili.com',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          Referer: 'https://www.bilibili.com',
         },
         timeout: 10000,
       });
@@ -140,7 +143,7 @@ export class BilibiliService {
    * 从时长字符串解析秒数
    */
   parseDuration(durationStr: string): number {
-    const parts = durationStr.split(':').map(part => parseInt(part, 10));
+    const parts = durationStr.split(':').map((part) => parseInt(part, 10));
 
     if (parts.length === 3) {
       // HH:MM:SS
@@ -153,6 +156,8 @@ export class BilibiliService {
       return parts[0];
     }
 
-    throw new BadRequestException('无效的时长格式，请使用 HH:MM:SS 或 MM:SS 格式');
+    throw new BadRequestException(
+      '无效的时长格式，请使用 HH:MM:SS 或 MM:SS 格式',
+    );
   }
 }

@@ -8,6 +8,48 @@ import {
 import { Response } from 'express';
 import { ApiResponse } from '../interceptors/response.interceptor';
 
+interface ExceptionResponseObject {
+  message?: string | string[];
+  error?: string;
+  code?: number;
+}
+
+interface PrismaClientKnownRequestError {
+  name: 'PrismaClientKnownRequestError';
+  code: string;
+  message: string;
+}
+
+interface PrismaClientValidationError {
+  name: 'PrismaClientValidationError';
+  message: string;
+}
+
+interface ValidationError {
+  name: 'ValidationError';
+  message?: string;
+}
+
+interface UnauthorizedError {
+  name: 'UnauthorizedError';
+  message?: string;
+}
+
+type KnownError =
+  | PrismaClientKnownRequestError
+  | PrismaClientValidationError
+  | ValidationError
+  | UnauthorizedError;
+
+function isKnownError(error: unknown): error is KnownError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    typeof (error as Record<string, unknown>).name === 'string'
+  );
+}
+
 /**
  * 全局异常过滤器
  * 捕获所有未被处理的异常，返回统一的错误响应
@@ -31,7 +73,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         errorMessage = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
-        const responseObj = exceptionResponse as any;
+        const responseObj = exceptionResponse as ExceptionResponseObject;
 
         if (responseObj.message) {
           if (Array.isArray(responseObj.message)) {
@@ -50,9 +92,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }
       }
     }
-    // 处理Prisma错误
-    else if (exception && typeof exception === 'object' && 'name' in exception) {
-      const error = exception as any;
+    // 处理Prisma和其他已知错误
+    else if (isKnownError(exception)) {
+      const error = exception;
 
       // Prisma客户端错误
       if (error.name === 'PrismaClientKnownRequestError') {

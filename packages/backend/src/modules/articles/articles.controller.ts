@@ -21,7 +21,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ArticlesService, ArticleResponse, PaginatedArticles } from './articles.service';
+import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { GetArticlesQueryDto } from './dto/get-articles-query.dto';
@@ -79,8 +79,14 @@ export class ArticlesController {
     status: HttpStatus.BAD_REQUEST,
     description: '请求参数无效',
   })
-  async createArticle(@Request() req, @Body() createArticleDto: CreateArticleDto) {
-    const article = await this.articlesService.createArticle(req.user.id, createArticleDto);
+  async createArticle(
+    @Request() req,
+    @Body() createArticleDto: CreateArticleDto,
+  ) {
+    const article = await this.articlesService.createArticle(
+      req.user.id,
+      createArticleDto,
+    );
     return {
       success: true,
       data: article,
@@ -91,14 +97,31 @@ export class ArticlesController {
   @Get()
   @ApiOperation({ summary: '获取内容列表（支持分页、筛选、排序）' })
   @ApiQuery({ name: 'page', required: false, description: '页码，默认为1' })
-  @ApiQuery({ name: 'pageSize', required: false, description: '每页数量，默认为20，最大100' })
-  @ApiQuery({ name: 'type', required: false, description: '内容类型：article（文章）或 video（视频）' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量，默认为20，最大100',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: '内容类型：article（文章）或 video（视频）',
+  })
   @ApiQuery({ name: 'author', required: false, description: '作者用户名' })
   @ApiQuery({ name: 'category', required: false, description: '分类' })
   @ApiQuery({ name: 'tag', required: false, description: '标签' })
   @ApiQuery({ name: 'search', required: false, description: '搜索关键词' })
-  @ApiQuery({ name: 'sortBy', required: false, description: '排序字段：createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）' })
-  @ApiQuery({ name: 'sortOrder', required: false, description: '排序顺序：asc（升序）或 desc（降序）' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description:
+      '排序字段：createdAt（创建时间）、views（浏览量）、likes（点赞数）、comments（评论数）',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: '排序顺序：asc（升序）或 desc（降序）',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: '获取内容列表成功',
@@ -204,7 +227,10 @@ export class ArticlesController {
   })
   async getArticleById(@Param() params: ArticleIdParamDto, @Request() req?) {
     const currentUserId = req?.user?.id;
-    const article = await this.articlesService.getArticleById(params.id, currentUserId);
+    const article = await this.articlesService.getArticleById(
+      params.id,
+      currentUserId,
+    );
     return {
       success: true,
       data: article,
@@ -356,7 +382,10 @@ export class ArticlesController {
     description: '已经点赞过该内容',
   })
   async likeArticle(@Param() params: ArticleIdParamDto, @Request() req) {
-    const result = await this.articlesService.likeArticle(params.id, req.user.id);
+    const result = await this.articlesService.likeArticle(
+      params.id,
+      req.user.id,
+    );
     return {
       success: true,
       data: result,
@@ -401,7 +430,10 @@ export class ArticlesController {
     description: '尚未点赞该内容',
   })
   async unlikeArticle(@Param() params: ArticleIdParamDto, @Request() req) {
-    const result = await this.articlesService.unlikeArticle(params.id, req.user.id);
+    const result = await this.articlesService.unlikeArticle(
+      params.id,
+      req.user.id,
+    );
     return {
       success: true,
       data: result,

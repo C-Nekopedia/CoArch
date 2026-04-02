@@ -7,7 +7,6 @@ import {
   HttpCode,
   HttpStatus,
   Request,
-  Version,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -160,7 +159,9 @@ export class AuthController {
     description: '请求参数验证失败',
   })
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    const result = await this.authService.refreshToken(refreshTokenDto.refreshToken);
+    const result = await this.authService.refreshToken(
+      refreshTokenDto.refreshToken,
+    );
     return {
       success: true,
       data: result,
