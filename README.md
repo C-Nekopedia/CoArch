@@ -66,7 +66,7 @@
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/your-username/coarch.git
+   git clone https://github.com/C-Nekopedia/CoArch.git
    cd coarch
    ```
 
