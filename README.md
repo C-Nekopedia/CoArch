@@ -1,7 +1,7 @@
 # Co-Arch - 内容创作与分享平台
 
 <p align="center">
-  <em>内容创作与分享平台</em>
+  <em>开源全栈网站项目</em>
 </p>
 
 <p align="center">
